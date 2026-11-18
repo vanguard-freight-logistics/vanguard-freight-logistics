@@ -1,0 +1,2723 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Lien vers le Manifeste PWA pour autoriser l'installation en application -->
+    <link rel="manifest" href="manifest-admin.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="VF Admin">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#070a12">
+    <title>Administration & Fret - Vanguard Freight</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root[data-theme="dark"] {
+            --bg-color: #070a12;
+            --card-bg: #0f1523;
+            --border-color: #1e293b;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --input-bg: #172033;
+            --input-border: #2a374a;
+            --table-bg: #0b0f19;
+            --wa-bg: #0b141a;
+            --wa-panel: #111b21;
+            --wa-incoming: #202c33;
+            --wa-outgoing: #005c4b;
+        }
+
+        :root[data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --table-bg: #f8fafc;
+            --wa-bg: #efeae2;
+            --wa-panel: #ffffff;
+            --wa-incoming: #ffffff;
+            --wa-outgoing: #d9fdd3;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg-color); 
+            padding: 12px; 
+            color: var(--text-main); 
+            margin: 0; 
+            font-size: 1rem; 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        button, .btn-action, .icon-btn, .btn-new, .dropdown-item {
+            transition: transform 0.12s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+        }
+        button:active:not(:disabled), .btn-action:active, .icon-btn:active, .btn-new:active {
+            transform: scale(0.95);
+        }
+
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, rgba(15, 21, 35, 0.95) 0%, rgba(7, 10, 18, 0.98) 100%);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 12px; box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .login-card {
+            width: 100%; max-width: 400px; background: var(--card-bg);
+            border: 1px solid var(--border-color); padding: 20px 18px;
+            border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); 
+            text-align: center; position: relative; overflow: hidden;
+            max-height: 95vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #10b981);
+        }
+
+        .login-icon-box {
+            width: 46px; height: 46px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(29, 78, 216, 0.3));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 14px; display: flex; align-items: center; justify-content: center;
+            color: var(--primary); font-size: 1.3rem; margin: 0 auto 10px auto; 
+        }
+
+        .login-card h2 { font-size: 1.3rem; margin-bottom: 2px; color: var(--text-main); font-weight: 800; }
+        .login-card p { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px; }
+
+        .login-error {
+            background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444; padding: 8px; border-radius: 8px; font-size: 0.8rem;
+            margin-bottom: 10px; display: none; font-weight: 500;
+        }
+
+        .admin-card { 
+            max-width: 900px; margin: 0 auto; background: var(--card-bg); 
+            padding: 20px 24px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+        }
+
+        .header-top {
+            display: flex; flex-direction: column; gap: 14px;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 16px;
+        }
+
+        .brand-title-container { display: flex; align-items: center; gap: 12px; }
+
+        .brand-icon-box {
+            width: 44px; height: 44px; background: linear-gradient(135deg, var(--primary), #1d4ed8);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.2rem; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); flex-shrink: 0;
+        }
+
+        h2 { 
+            background: linear-gradient(135deg, var(--text-main) 60%, var(--text-muted));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-size: 1.25rem; margin: 0; font-weight: 700; letter-spacing: -0.3px; 
+        }
+        .brand-subtitle { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+
+        .header-controls { display: flex; align-items: center; gap: 8px; position: relative; width: 100%; flex-wrap: wrap; }
+
+        .icon-btn, .btn-new {
+            background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-main);
+            height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 0.9rem; padding: 0 12px; position: relative; white-space: nowrap;
+        }
+        .icon-btn { padding: 0; min-width: 42px; flex: 1; }
+        
+        .btn-new { 
+            background: #10b981; color: white; border: none; font-weight: 600; gap: 6px; 
+            flex: 2; min-width: 130px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+        
+        .btn-lock { background: #ef4444; color: white; border: none; }
+        .btn-msg { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+        .msg-badge {
+            position: absolute; top: -6px; right: -6px; background: #ef4444; color: white;
+            font-size: 0.72rem; font-weight: 800; padding: 2px 7px; border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4); display: none; border: 2px solid var(--card-bg);
+            min-width: 18px; text-align: center; box-sizing: border-box;
+        }
+
+        .dropdown-menu {
+            position: absolute; top: 50px; right: 0; background: var(--card-bg);
+            border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            display: flex; flex-direction: column; z-index: 1000; width: 240px;
+            opacity: 0; transform: translateY(-8px) scale(0.98); pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .dropdown-menu.show { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .dropdown-item {
+            padding: 12px 16px; font-size: 0.92rem; color: var(--text-main); background: none;
+            border: none; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px;
+            width: 100%; box-sizing: border-box;
+        }
+        .dropdown-item:hover { background: var(--input-bg); color: var(--primary); }
+        .dropdown-item.text-danger { color: #ef4444; }
+        .dropdown-divider { height: 1px; background: var(--border-color); margin: 4px 0; }
+
+        #messagingSection { display: none; margin-top: 0; }
+        
+        .wa-container {
+            border: 1px solid var(--border-color); 
+            border-radius: 14px; 
+            overflow: hidden; 
+            background: var(--wa-panel);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            height: 85vh;
+            min-height: 500px;
+        }
+        
+        .chat-list-container {
+            flex: 1;
+            overflow-y: auto; 
+            background: var(--wa-panel); 
+            display: flex; 
+            flex-direction: column;
+        }
+        
+        .chat-item {
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 14px 18px; 
+            border-bottom: 1px solid var(--border-color); 
+            cursor: pointer; 
+            transition: background 0.15s ease;
+            gap: 12px;
+            background: var(--wa-panel);
+        }
+        .chat-item:hover { background: var(--input-bg); }
+        
+        .chat-item-left { 
+            display: flex; 
+            align-items: center; 
+            gap: 14px; 
+            overflow: hidden; 
+            flex: 1; 
+        }
+        
+        .chat-avatar {
+            width: 50px; height: 50px; 
+            background: linear-gradient(135deg, #25d366, #128c7e); 
+            color: white; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-weight: 700; font-size: 1.1rem; flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(37, 211, 102, 0.2);
+        }
+
+        .chat-info-col {
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            flex: 1; 
+            gap: 3px;
+        }
+
+        .chat-line-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .chat-contact-name {
+            font-weight: 700; 
+            font-size: 1rem; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            color: var(--text-main);
+        }
+
+        .chat-preview-text {
+            font-size: 0.88rem; 
+            color: var(--text-muted); 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+        }
+        
+        .user-type-badge {
+            display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; 
+            border-radius: 5px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; width: fit-content;
+        }
+        .badge-visiteur { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-client { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-known { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+
+        .chat-box-view {
+            background: var(--wa-bg); 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column;
+            opacity: 0;
+            transform: translateX(15px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .chat-box-view.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+        
+        .chat-messages-area { 
+            flex: 1 1 0; 
+            min-height: 0;
+            padding: 16px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            background-image: radial-gradient(rgba(0,0,0,0.05) 1px, transparent 0); 
+            background-size: 24px 24px;
+        }
+        
+        .chat-bubble {
+            max-width: 75%; 
+            padding: 10px 14px; 
+            border-radius: 10px; 
+            font-size: 0.95rem; 
+            line-height: 1.45; 
+            position: relative; 
+            box-shadow: 0 1px 1px rgba(0,0,0,0.15);
+        }
+        .chat-bubble.client { background: var(--wa-incoming); color: var(--text-main); align-self: flex-start; border-top-left-radius: 0; }
+        .chat-bubble.admin { background: var(--wa-outgoing); color: #ffffff; align-self: flex-end; border-top-right-radius: 0; }
+        :root[data-theme="light"] .chat-bubble.admin { color: #111b21; }
+        
+        .chat-bubble img { 
+            max-width: 100%; 
+            max-height: 220px; 
+            border-radius: 8px; 
+            margin-top: 6px; 
+            display: block; 
+            cursor: pointer; 
+            object-fit: cover;
+        }
+        
+        .quick-replies-bar {
+            display: flex;
+            gap: 6px;
+            padding: 8px 12px;
+            background: var(--wa-panel);
+            border-top: 1px solid var(--border-color);
+            overflow-x: auto;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .quick-reply-chip {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 14px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .quick-reply-chip:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .chat-input-bar { 
+            display: flex; 
+            gap: 10px; 
+            padding: 10px 16px 12px 16px; 
+            background: var(--wa-panel); 
+            align-items: center; 
+            flex-shrink: 0;
+        }
+
+        .visits-widget {
+            background: var(--table-bg); border: 1px solid var(--border-color); border-radius: 12px;
+            padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .visits-info { display: flex; align-items: center; gap: 10px; }
+        .visits-icon {
+            width: 36px; height: 36px; background: rgba(16, 185, 129, 0.15); color: #10b981;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;
+        }
+
+        .top-row-tools { 
+            display: grid; 
+            grid-template-columns: 1fr 1.5fr; 
+            gap: 12px; 
+            margin-bottom: 14px; 
+            align-items: center;
+        }
+        
+        .search-box { 
+            position: relative; 
+            width: 100%; 
+            height: 42px;
+            overflow: hidden; 
+            box-sizing: border-box; 
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .search-box i { 
+            position: absolute; 
+            left: 14px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            color: var(--text-muted); 
+            font-size: 0.85rem; 
+            z-index: 2; 
+            pointer-events: none; 
+        }
+        .search-box input { 
+            width: 100%; 
+            height: 100%;
+            background: transparent;
+            border: none;
+            padding-left: 38px !important; 
+            padding-right: 12px; 
+            box-sizing: border-box; 
+            color: var(--text-main);
+            outline: none;
+        }
+
+        .colis-table-container { 
+            background: var(--table-bg); border: 1px solid var(--border-color); border-radius: 10px; 
+            max-height: 220px; overflow-y: auto; margin-bottom: 14px; padding: 4px;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+        th { color: var(--text-muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; background: var(--input-bg); position: sticky; top: 0; z-index: 2; }
+        tbody tr:hover { background-color: var(--input-bg); }
+
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 3px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+        }
+        .status-enregistre { background: rgba(59, 130, 246, 0.12); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.25); }
+
+        /* BOUTONS D'ACTION MODERNES, ESPACÉS ET FACILES À MANIPULER SUR MOBILE */
+        .actions-cell {
+            text-align: right;
+            white-space: nowrap;
+        }
+        .actions-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px; /* Espace confortable entre les boutons */
+        }
+        .btn-action { 
+            border: none; 
+            width: 38px; 
+            height: 38px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-size: 0.95rem; 
+            color: white; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+        .btn-view { background: #0ea5e9; } 
+        .btn-msg-action { background: #10b981; } 
+        .btn-eye { background: #8b5cf6; }  
+        .btn-del { background: #ef4444; }  
+
+        .sheet-section-title {
+            font-size: 0.92rem; color: var(--primary); font-weight: 700;
+            border-bottom: 1px dashed var(--border-color); padding-bottom: 4px; margin: 14px 0 8px 0;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+
+        .form-group { margin-bottom: 10px; }
+        label { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; color: var(--text-muted); }
+        input, select { 
+            width: 100%; padding: 10px 12px; background: var(--input-bg);
+            border: 1px solid var(--input-border); border-radius: 8px; box-sizing: border-box; 
+            font-size: 0.95rem; color: var(--text-main); font-family: inherit;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+
+        .spinner-icon {
+            display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%; border-top-color: #fff; animation: spin 0.8s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .btn-login-submit { 
+            background: linear-gradient(135deg, var(--primary), #1d4ed8); color: white; border: none; padding: 11px; font-weight: 700; border-radius: 10px; 
+            cursor: pointer; width: 100%; font-size: 0.95rem; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        
+        button[type="submit"]:not(.btn-login-submit) {
+            background: var(--primary); color: white; border: none; padding: 12px; font-weight: 700; border-radius: 8px; cursor: pointer; width: 100%; font-size: 1rem; margin-top: 12px; 
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        /* MODALE LANGUE */
+        .lang-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 20000; padding: 20px; box-sizing: border-box;
+        }
+        .lang-card {
+            background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px;
+            width: 100%; max-width: 380px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; gap: 16px;
+        }
+        .lang-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: 250px; overflow-y: auto; }
+        .lang-btn {
+            background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-main);
+            padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.95rem;
+        }
+        .lang-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* CUSTOM PREMIUM CONFIRM MODAL STYLES */
+        .custom-confirm-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center; z-index: 30000;
+            padding: 20px; box-sizing: border-box;
+            animation: fadeInOverlay 0.2s ease forwards;
+        }
+        .custom-confirm-card {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 20px; width: 100%; max-width: 400px; padding: 24px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+            display: flex; flex-direction: column; gap: 16px; text-align: center;
+            animation: scaleUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .custom-confirm-icon {
+            width: 50px; height: 50px; background: rgba(239, 68, 68, 0.15); color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 16px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+            margin: 0 auto;
+        }
+        .custom-confirm-title { font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin: 0; }
+        .custom-confirm-message { font-size: 0.92rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
+        .custom-confirm-actions { display: flex; gap: 10px; margin-top: 6px; }
+        .custom-confirm-btn {
+            flex: 1; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 0.95rem; cursor: pointer; border: none;
+        }
+        .custom-confirm-cancel { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--input-border); }
+        .custom-confirm-cancel:hover { background: var(--border-color); }
+        .custom-confirm-ok { background: #ef4444; color: white; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        .custom-confirm-ok:hover { background: #dc2626; }
+
+        @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUpModal { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+
+        @media(max-width: 768px) {
+            .grid-4 { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        }
+        @media(max-width: 650px) {
+            .grid-3, .grid-2, .top-row-tools, .grid-4 { grid-template-columns: 1fr; gap: 10px; }
+        }
+
+        /* =====================================================
+           CORRECTIFS : messagerie admin (header responsive + bulles compactes)
+           ===================================================== */
+        .wa-container { height: 85vh; height: 85dvh; }
+
+        /* --- BUG 2 : en-tête messagerie propre, premium, sans débordement --- */
+        .msg-header {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 10px; min-width: 0;
+        }
+        .msg-back-btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            height: 42px; padding: 0 16px 0 7px; min-width: 0; max-width: 100%;
+            background: var(--input-bg); color: var(--text-main);
+            border: 1px solid var(--input-border); border-radius: 14px;
+            font-family: inherit; font-size: 0.86rem; font-weight: 600;
+            cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        .msg-back-btn:hover { border-color: var(--primary); }
+        .msg-back-arrow {
+            width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: rgba(59, 130, 246, 0.16); color: var(--primary); font-size: 0.78rem;
+        }
+        .msg-back-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .msg-title {
+            flex: 1 1 auto; min-width: 0; margin: 0; font-size: 1.05rem; font-weight: 700;
+            color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .msg-purge-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+            height: 42px; padding: 0 14px; flex-shrink: 0;
+            background: rgba(239, 68, 68, 0.12); color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 14px;
+            font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+        }
+        .msg-purge-btn:active { transform: scale(0.95); }
+
+        @media (max-width: 650px) {
+            .msg-header {
+                display: grid; grid-template-columns: minmax(0, 1fr) auto;
+                grid-template-areas: "back back" "title purge"; gap: 8px 10px;
+            }
+            .msg-back-btn { grid-area: back; width: 100%; justify-content: flex-start; }
+            .msg-purge-btn { grid-area: purge; height: 38px; }
+            .msg-title { grid-area: title; font-size: 1rem; padding: 0 2px; align-self: center; }
+        }
+        @media (max-width: 380px) {
+            .msg-purge-btn { width: 42px; padding: 0; }
+            .msg-purge-btn span { display: none; }
+        }
+
+        /* --- barre du chat actif --- */
+        .chat-topbar {
+            padding: 10px 12px; background: var(--wa-panel); border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0;
+        }
+        .chat-topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+        .chat-topbar-back {
+            background: none; border: none; color: var(--text-main); cursor: pointer;
+            font-size: 1.15rem; width: 36px; height: 36px; flex-shrink: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .chat-topbar-left strong { font-size: 1rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .btn-action.chat-del-btn {
+            width: auto; padding: 0 12px; gap: 6px; font-size: 0.82rem; font-weight: 600;
+            background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);
+            box-shadow: none; flex-shrink: 0; height: 36px;
+        }
+        @media (max-width: 400px) { .btn-action.chat-del-btn span { display: none; } .btn-action.chat-del-btn { width: 36px; padding: 0; } }
+
+        /* --- BUG 4 : bulles compactes façon WhatsApp (max 70 %) --- */
+        .chat-messages-area { padding: 10px 12px; gap: 3px; }
+        .chat-bubble {
+            box-sizing: border-box; max-width: 70%; width: fit-content;
+            padding: 5px 9px 4px; border-radius: 8px;
+            font-size: 0.88rem; line-height: 1.32;
+            overflow-wrap: anywhere; word-break: break-word;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.13);
+        }
+        .chat-bubble::after { content: ""; display: table; clear: both; }
+        .chat-bubble .bubble-text { white-space: pre-wrap; }
+        .chat-bubble .bubble-time {
+            float: right; margin: 6px 0 -1px 10px;
+            font-size: 0.62rem; line-height: 1; color: var(--text-muted);
+        }
+        .chat-bubble.admin .bubble-time { color: rgba(255, 255, 255, 0.72); }
+        :root[data-theme="light"] .chat-bubble.admin .bubble-time { color: rgba(17, 27, 33, 0.55); }
+        .chat-bubble img { max-width: min(100%, 220px); max-height: 160px; margin-top: 2px; border-radius: 6px; }
+        .bubble-ticks { margin-left: 4px; font-size: 0.7rem; color: rgba(255, 255, 255, 0.6); }
+        :root[data-theme="light"] .bubble-ticks { color: rgba(17, 27, 33, 0.4); }
+        .bubble-ticks.read, :root[data-theme="light"] .bubble-ticks.read { color: #53bdeb; }
+        .chat-bubble.client { border-top-left-radius: 0; }
+        .chat-bubble.admin { border-top-right-radius: 0; }
+
+        .chat-input-bar { padding: 8px 10px 10px 10px; gap: 8px; }
+        .quick-replies-bar { -webkit-overflow-scrolling: touch; }
+
+        /* --- confort mobile --- */
+        @media (max-width: 480px) {
+            .admin-card { padding: 16px 14px; }
+        }
+        /* ===== Mode ordinateur (activable depuis le menu burger) ===== */
+        body.desktop-mode .admin-card { max-width: min(1400px, 96vw); padding: 28px 40px; }
+        body.desktop-mode .top-row-tools { grid-template-columns: 1fr 2fr; gap: 16px; }
+        body.desktop-mode .grid-2 { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        body.desktop-mode .grid-3 { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        body.desktop-mode .grid-4 { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        body.desktop-mode .dropdown-menu { width: 280px; }
+    
+        /* --- Discussion en plein écran sur téléphone --- */
+        html.chat-open, html.chat-open body { overflow: hidden; }
+        @media (max-width: 768px) {
+            .chat-box-view.active {
+                position: fixed; top: var(--vvt, 0px); left: 0; width: 100%;
+                height: var(--vvh, 100dvh); z-index: 1500; transform: none;
+            }
+            .chat-box-view.active .chat-input-bar { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+        }
+</style>
+</head>
+<body>
+
+    <div id="loginOverlay">
+        <div class="login-card">
+            <div class="login-icon-box"><i class="fa-solid fa-shield-halved"></i></div>
+            <h2 id="loginTitleTxt">Zone sécurisée</h2>
+            <p id="loginSubTxt">Administration Vanguard Freight</p>
+            <div class="login-error" id="loginErrorMsg">Identifiants incorrects. Réessayez.</div>
+            <form onsubmit="handleAdminLogin(event)">
+                <div class="form-group" style="text-align: left; margin-bottom: 10px;">
+                    <label for="adminEmailInput" id="labelEmailTxt" style="font-size: 0.78rem; margin-bottom: 2px;"><i class="fa-solid fa-envelope" style="color: var(--primary);"></i> Email administrateur :</label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <i class="fa-solid fa-at" style="position: absolute; left: 14px; color: var(--text-muted); z-index: 2; pointer-events: none;"></i>
+                        <input type="email" id="adminEmailInput" placeholder="admin@vanguard.com" style="padding-left: 40px; height: 40px; border-radius: 8px; font-size: 0.9rem;" required>
+                    </div>
+                </div>
+                <div class="form-group" style="text-align: left; margin-bottom: 12px;">
+                    <label for="adminPasswordInput" id="labelPassTxt" style="font-size: 0.78rem; margin-bottom: 2px;"><i class="fa-solid fa-key" style="color: var(--primary);"></i> Mot de passe administrateur :</label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <i class="fa-solid fa-lock" style="position: absolute; left: 14px; color: var(--text-muted); z-index: 2; pointer-events: none;"></i>
+                        <input type="password" id="adminPasswordInput" placeholder="Entrez votre mot de passe" style="padding-left: 40px; padding-right: 48px; height: 40px; border-radius: 8px; font-size: 0.9rem;" required>
+                        <button type="button" onclick="togglePasswordVisibility()" style="position: absolute; right: 4px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; z-index: 5; padding: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;" title="Afficher / Masquer">
+                            <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" id="btnLoginSubmit" class="btn-login-submit">
+                    <i class="fa-solid fa-arrow-right-to-bracket" id="loginBtnIcon"></i> <span id="loginBtnText">Se connecter</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="admin-card" id="topCard">
+        <div class="header-top">
+            <div class="brand-title-container">
+                <div class="brand-icon-box"><i class="fa-solid fa-box-open"></i></div>
+                <div>
+                    <h2 id="cardHeaderTitle">Fiche Fret & Colis</h2>
+                    <div class="brand-subtitle" id="cardHeaderSub">Système d'administration et de suivi Vanguard</div>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <button type="button" class="btn-new" onclick="newColis()"><i class="fa-solid fa-plus-circle"></i> <span id="btnNewColisTxt">Nouveau colis</span></button>
+                
+                <button type="button" class="icon-btn btn-msg" onclick="toggleMessagingView()" title="Messages clients">
+                    <i class="fa-solid fa-comments" style="font-size: 1.05rem;"></i>
+                    <span class="msg-badge" id="globalMsgBadge">0</span>
+                </button>
+
+                <button type="button" class="icon-btn" id="btnGoHome" onclick="window.location.href='index.html'" title="Accueil du site"><i class="fa-solid fa-globe"></i></button>
+                <button type="button" class="icon-btn btn-lock" onclick="lockAdminSession()" title="Verrouiller"><i class="fa-solid fa-lock"></i></button>
+                <button type="button" class="icon-btn" id="themeToggleBtn" title="Changer de thème"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
+                <button type="button" class="icon-btn" id="menuToggleBtn" title="Options"><i class="fa-solid fa-bars"></i></button>
+
+                <div class="dropdown-menu" id="hamburgerMenu">
+                    <button type="button" class="dropdown-item" onclick="location.reload()"><i class="fa-solid fa-rotate"></i> <span id="menuRefreshTxt">Actualiser le site</span></button>
+                    <button type="button" class="dropdown-item" onclick="toggleAppTheme()"><i class="fa-solid fa-circle-half-stroke" id="menuThemeIcon"></i> <span id="menuThemeTxt">Mode clair / sombre</span></button>
+                    <button type="button" class="dropdown-item" onclick="togglePowerSavingMode()"><i class="fa-solid fa-power-off" style="color: #f59e0b;"></i> <span id="menuPowerTxt">Éteindre / Veille</span></button>
+                    <div class="dropdown-divider"></div>
+                    <button type="button" class="dropdown-item" onclick="openLangModal()"><i class="fa-solid fa-globe"></i> <span id="menuLangTxt">Langue</span></button>
+                    <button type="button" class="dropdown-item" onclick="toggleFullScreen()"><i class="fa-solid fa-expand"></i> <span id="menuFullTxt">Plein écran</span></button>
+                    <button type="button" class="dropdown-item" onclick="toggleDesktopMode()"><i class="fa-solid fa-desktop"></i> <span id="menuDesktopTxt">Mode ordinateur</span><i class="fa-solid fa-check" id="menuDesktopCheck" style="display:none; margin-left:auto; color:#10b981;"></i></button>
+                    <button type="button" class="dropdown-item" id="installAppItem" onclick="installApp()"><i class="fa-solid fa-download" style="color: #10b981;"></i> <span id="menuInstallTxt">Installer l'application</span></button>
+                    <button type="button" class="dropdown-item" id="enablePushItem" onclick="enablePush()"><i class="fa-solid fa-bell" style="color: #f59e0b;"></i> <span id="menuPushTxt">Activer les notifications</span></button>
+                    <div class="dropdown-divider"></div>
+                    <button type="button" class="dropdown-item text-danger" onclick="purgerTousLesMessages()"><i class="fa-solid fa-broom"></i> <span id="menuPurgeTxt">Purger les anciens messages</span></button>
+                    <button type="button" class="dropdown-item text-danger" onclick="lockAdminSession()"><i class="fa-solid fa-lock"></i> <span id="menuLogoutTxt">Verrouiller la session</span></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mainDashboardView">
+            <div class="visits-widget">
+                <div class="visits-info">
+                    <div class="visits-icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <div>
+                        <div style="font-size: 0.85rem; font-weight: 700;" id="visitTitleTxt">Visiteurs du site</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);" id="dernierVisiteurText">Chargement...</div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary);" id="totalVisitesCount">0</span>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;" id="visitTotalTxt">Total visites</div>
+                </div>
+            </div>
+
+            <div class="top-row-tools">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Rechercher code, client..." onkeyup="filterTable()">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--text-muted); background: var(--input-bg); padding: 0 12px; border-radius: 8px; border: 1px solid var(--input-border); height: 42px; box-sizing: border-box;">
+                    <span id="activeRecordsTxt">Enregistrements actifs :</span>
+                    <span class="colis-count-badge" id="colisCountBadge" style="font-weight: 700; color: var(--text-main);">0</span>
+                </div>
+            </div>
+
+            <div class="colis-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th id="thTracking">N° de suivi</th>
+                            <th id="thClient">Client & Dest.</th>
+                            <th id="thFreight">Colis / Fret</th>
+                            <th id="thStatus">Statut global</th>
+                            <th style="text-align: right;" id="thActions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="colisTableBody"></tbody>
+                </table>
+            </div>
+
+            <form id="adminForm" onsubmit="saveColis(event)">
+                <div class="sheet-section-title"><i class="fa-solid fa-box"></i> <span id="sec1Title">1. Expédition & Suivi Dynamique</span></div>
+                
+                <div class="grid-3">
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-barcode" style="color: var(--primary);"></i> <span id="lblTracking">Numéro de suivi :</span></label>
+                        <div style="display: flex; gap: 6px;">
+                            <input type="text" id="trackingId" required style="flex: 1;">
+                            <button type="button" class="btn-action" style="background: #3b82f6; padding: 0 12px; margin-left: 0; width: auto;" onclick="copyInputTrackingCode()"><i class="fa-solid fa-copy"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-box-archive" style="color: var(--primary);"></i> <span id="lblFreightName">Nom du colis / fret :</span></label>
+                        <input type="text" id="colisNom" placeholder="ex: Lot pièces auto" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-circle-check" style="color: var(--primary);"></i> <span id="lblGlobalStatus">Statut global :</span></label>
+                        <select id="statutGlobal">
+                            <option value="REGISTERED">ENREGISTRÉ</option>
+                            <option value="AWAITING DEPARTURE">EN ATTENTE DE DÉPART</option>
+                            <option value="IN TRANSIT">EN TRANSIT</option>
+                            <option value="CUSTOMS CONTROL">CONTRÔLE DOUANIER</option>
+                            <option value="DELIVERED">LIVRÉ</option>
+                            <option value="ON HOLD">EN ATTENTE</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-3">
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-truck-fast" style="color: #10b981;"></i> <span id="lblCamionPos">Position camion (% / Auto) :</span></label>
+                        <select id="positionCamion">
+                            <option value="auto">Automatique (selon dates)</option>
+                            <option value="0">0% (Départ)</option>
+                            <option value="25">25% (En route)</option>
+                            <option value="50">50% (À mi-chemin)</option>
+                            <option value="75">75% (Presque arrivé)</option>
+                            <option value="100">100% (Arrivé / Livré)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-sliders" style="color: #10b981;"></i> <span id="lblMovState">État du mouvement :</span></label>
+                        <select id="etatMouvement">
+                            <option value="normal">Mouvement normal</option>
+                            <option value="pause">Bloqué en attente (panne / problème)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-map-location-dot" style="color: #10b981;"></i> <span id="lblTransitStep">Étape de transit :</span></label>
+                        <select id="positionActuelle">
+                            <option value="Package registered">1. Colis enregistré</option>
+                            <option value="In transit">2. En transit</option>
+                            <option value="Customs clearance in progress">3. Contrôle douanier</option>
+                            <option value="Arrived at sorting center">4. Arrivé au centre de tri</option>
+                            <option value="Delivered">5. Livré</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-calendar-days" style="color: #f59e0b;"></i> <span id="lblDepDate">Date & heure de départ :</span></label>
+                        <input type="datetime-local" id="dateDepart">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-calendar-check" style="color: #f59e0b;"></i> <span id="lblArrDate">Date & heure d'arrivée (estimée) :</span></label>
+                        <input type="datetime-local" id="dateArrivee">
+                    </div>
+                </div>
+
+                <div class="sheet-section-title"><i class="fa-solid fa-store"></i> <span id="sec2Title">2. Vendeur / Expéditeur & Point de Départ GPS</span></div>
+                <div class="grid-2">
+                    <div class="form-group"><label><i class="fa-solid fa-user-tie" style="color: var(--primary);"></i> <span id="lblExpName">Nom complet :</span></label><input type="text" id="expediteurNom" placeholder="Nom ou entreprise"></div>
+                    <div class="form-group"><label><i class="fa-solid fa-phone" style="color: var(--primary);"></i> <span id="lblExpTel">Numéro de téléphone :</span></label><input type="text" id="expediteurTel" placeholder="+33 ..."></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group"><label><i class="fa-solid fa-envelope" style="color: var(--primary);"></i> <span id="lblExpEmail">Adresse email :</span></label><input type="email" id="expediteurEmail" placeholder="contact@expediteur.com"></div>
+                    <div class="form-group"><label><i class="fa-solid fa-globe" style="color: var(--primary);"></i> <span id="lblExpPays">Pays :</span></label><input type="text" id="expediteurPays" placeholder="ex: France"></div>
+                </div>
+                <div class="grid-3">
+                    <div class="form-group"><label><i class="fa-solid fa-city" style="color: var(--primary);"></i> <span id="lblExpVille">Ville :</span></label><input type="text" id="expediteurVille" placeholder="ex: Paris"></div>
+                    <div class="form-group"><label><i class="fa-solid fa-map-pin" style="color: var(--primary);"></i> <span id="lblExpCp">Code postal :</span></label><input type="text" id="expediteurCp" placeholder="ex: 75001"></div>
+                    <div class="form-group"><label><i class="fa-solid fa-road" style="color: var(--primary);"></i> <span id="lblExpRue">Rue & Numéro :</span></label><input type="text" id="expediteurRue" placeholder="ex: 12 rue de la Paix"></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group"><label><i class="fa-solid fa-location-crosshairs" style="color: var(--primary);"></i> <span id="lblExpLat">Latitude de départ (ex: 4.0511) :</span></label><input type="text" id="startLat" placeholder="ex: 4.0511"></div>
+                    <div class="form-group"><label><i class="fa-solid fa-location-crosshairs" style="color: var(--primary);"></i> <span id="lblExpLon">Longitude de départ (ex: 9.7679) :</span></label><input type="text" id="startLon" placeholder="ex: 9.7679"></div>
+                </div>
+
+                <div class="sheet-section-title"><i class="fa-solid fa-user"></i> <span id="sec3Title">3. Destinataire (Client) & Point d'Arrivée GPS</span></div>
+                <div class="grid-2">
+                    <div class="form-group"><label><i class="fa-solid fa-user" style="color: #10b981;"></i> <span id="lblClientName">Nom complet :</span></label><input type="text" id="clientNom" required placeholder="Nom du client"></div>
+                    <div class="form-group"><label><i class="fa-solid fa-phone" style="color: #10b981;"></i> <span id="lblClientTel">Numéro de téléphone :</span></label><input type="text" id="clientTel" placeholder="+237 ..."></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group"><label><i class="fa-solid fa-envelope" style="color: #10b981;"></i> <span id="lblClientEmail">Adresse email :</span></label><input type="email" id="clientEmail" placeholder="client@email.com"></div>
+                    <div class="form-group"><label><i class="fa-solid fa-globe" style="color: #10b981;"></i> <span id="lblClientPays">Pays :</span></label><input type="text" id="clientPays" required placeholder="ex: Cameroun"></div>
+                </div>
+                <div class="grid-3">
+                    <div class="form-group"><label><i class="fa-solid fa-city" style="color: #10b981;"></i> <span id="lblClientVille">Ville :</span></label><input type="text" id="clientVille" required placeholder="ex: Douala"></div>
+                    <div class="form-group"><label><i class="fa-solid fa-map-pin" style="color: #10b981;"></i> <span id="lblClientCp">Code postal :</span></label><input type="text" id="clientCp" placeholder="ex: 00237"></div>
+                    <div class="form-group"><label><i class="fa-solid fa-road" style="color: #10b981;"></i> <span id="lblClientRue">Rue & Numéro :</span></label><input type="text" id="clientRue" required placeholder="ex: Boulevard Akwa"></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group"><label><i class="fa-solid fa-location-crosshairs" style="color: #10b981;"></i> <span id="lblClientLat">Latitude d'arrivée (ex: 3.8480) :</span></label><input type="text" id="endLat" placeholder="ex: 3.8480"></div>
+                    <div class="form-group"><label><i class="fa-solid fa-location-crosshairs" style="color: #10b981;"></i> <span id="lblClientLon">Longitude d'arrivée (ex: 11.5021) :</span></label><input type="text" id="endLon" placeholder="ex: 11.5021"></div>
+                </div>
+
+                <button type="submit" id="btnSaveSubmit">
+                    <i class="fa-solid fa-floppy-disk" id="saveBtnIcon"></i> <span id="btnSaveText">Enregistrer la fiche</span>
+                </button>
+            </form>
+        </div>
+
+        <div id="messagingSection">
+            <div class="msg-header">
+                <button type="button" class="msg-back-btn" onclick="toggleMessagingView()">
+                    <span class="msg-back-arrow"><i class="fa-solid fa-arrow-left"></i></span>
+                    <span class="msg-back-label" id="backDashboardTxt">Retour au tableau de bord</span>
+                </button>
+                <h3 class="msg-title" id="msgSectionTitle"><i class="fa-solid fa-comments" style="color: #25d366;"></i> Messagerie centrale</h3>
+                <button type="button" class="msg-purge-btn" onclick="purgerTousLesMessages()">
+                    <i class="fa-solid fa-broom"></i> <span id="purgeAllBtnTxt">Tout vider</span>
+                </button>
+            </div>
+
+            <style>
+                .vf-chip-btn { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--input-border); border-radius: 10px; padding: 8px 12px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+                .vf-chip-btn.danger { color: #ef4444; }
+                .vf-chip-btn.on { border-color: var(--primary); color: var(--primary); }
+            </style>
+            <div id="chatToolbar" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0;">
+                <button type="button" class="vf-chip-btn" id="btnSelMode" onclick="toggleSelectMode()"><i class="fa-regular fa-square-check"></i> <span id="selModeTxt">Sélectionner</span></button>
+                <button type="button" class="vf-chip-btn" id="btnShowHidden" onclick="toggleShowHidden()"><i class="fa-solid fa-eye-slash"></i> <span id="showHiddenTxt">Masquées</span></button>
+            </div>
+            <div id="selActionBar" style="display: none; gap: 8px; flex-wrap: wrap; margin: 0 0 8px;">
+                <button type="button" class="vf-chip-btn" id="btnSelHide" onclick="hideSelectedChats()"><i class="fa-solid fa-eye-slash"></i> <span id="selHideTxt">Masquer</span></button>
+                <button type="button" class="vf-chip-btn danger" id="btnSelDelete" onclick="deleteSelectedChats()"><i class="fa-solid fa-trash-can"></i> <span id="selDelTxt">Supprimer</span></button>
+            </div>
+
+            <div class="wa-container">
+                <div id="chatListContainer" class="chat-list-container">
+                    <div style="text-align: center; color: var(--text-muted); padding: 40px;" id="loadingChatsTxt">Chargement des discussions...</div>
+                </div>
+
+                <div id="activeChatBox" class="chat-box-view">
+                    <div class="chat-topbar">
+                        <div class="chat-topbar-left">
+                            <button type="button" id="btnChatBack" class="chat-topbar-back" onclick="closeActiveChat()"><i class="fa-solid fa-arrow-left"></i></button>
+                            <strong id="activeChatClientName">Nom du client</strong>
+                        </div>
+                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                            <button type="button" id="btnHideConv" class="btn-action chat-del-btn" onclick="hideCurrentChat()" style="color: var(--text-main);">
+                                <i class="fa-solid fa-eye-slash"></i> <span id="hideConvTxt">Masquer</span>
+                            </button>
+                            <button type="button" id="btnClearHist" class="btn-action chat-del-btn" onclick="viderHistoriqueConversation()" style="color: var(--text-main);">
+                                <i class="fa-solid fa-eraser"></i> <span id="clearHistTxt">Vider l'historique</span>
+                            </button>
+                            <button type="button" id="btnDelConv" class="btn-action chat-del-btn" onclick="supprimerConversationActuelle()">
+                                <i class="fa-solid fa-trash-can"></i> <span id="delConvTxt">Supprimer le client</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages-area" id="chatMessagesArea"></div>
+
+                    <div class="quick-replies-bar">
+                        <span class="quick-reply-chip" onclick="insertQuickReply(1)">📦 <span id="qr1">Colis enregistré</span></span>
+                        <span class="quick-reply-chip" onclick="insertQuickReply(2)">🚚 <span id="qr2">En transit</span></span>
+                        <span class="quick-reply-chip" onclick="insertQuickReply(3)">✅ <span id="qr3">Paiement reçu</span></span>
+                        <span class="quick-reply-chip" onclick="insertQuickReply(4)">🏁 <span id="qr4">Livré</span></span>
+                    </div>
+
+                    <div class="chat-input-bar">
+                        <input type="file" id="chatImageInput" accept="image/*" style="display: none;" onchange="sendImageReply(this)">
+
+                        <button type="button" id="btnPhoto" style="background: var(--input-bg); color: var(--primary); border: 1px solid var(--input-border); width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;" onclick="document.getElementById('chatImageInput').click()">
+                            <i class="fa-solid fa-camera" style="font-size: 1.1rem;"></i>
+                        </button>
+
+                        <input type="text" id="adminReplyInput" placeholder="Écrire un message..." style="flex: 1; min-width: 0; height: 42px; font-size: 1rem; border-radius: 20px; padding: 0 16px;" onkeypress="if(event.key === 'Enter') sendAdminReply()">
+
+                        <button type="button" id="btnSend" style="background: #25d366; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;" onclick="sendAdminReply()">
+                            <i class="fa-solid fa-paper-plane" style="font-size: 1rem;"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE DE SÉLECTION DE LANGUE -->
+    <div class="lang-modal" id="langModal">
+        <div class="lang-card">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="margin: 0; font-size: 1.1rem;"><i class="fa-solid fa-globe" style="color: var(--primary);"></i> Choisir la langue</h3>
+                <button type="button" onclick="closeLangModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="position: relative;">
+                <input type="text" id="langSearchInput" placeholder="Filtrer les langues..." onkeyup="filterLanguages()" style="padding-left: 35px; height: 38px; font-size: 0.9rem;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.8rem;"></i>
+            </div>
+            <div class="lang-grid" id="langGridContainer">
+                <button class="lang-btn" onclick="changeLanguage('en')">🇬🇧 English</button>
+                <button class="lang-btn" onclick="changeLanguage('fr')">🇫🇷 Français</button>
+                <button class="lang-btn" onclick="changeLanguage('de')">🇩🇪 Deutsch</button>
+                <button class="lang-btn" onclick="changeLanguage('es')">🇪🇸 Español</button>
+                <button class="lang-btn" onclick="changeLanguage('it')">🇮🇹 Italiano</button>
+                <button class="lang-btn" onclick="changeLanguage('pl')">🇵🇱 Polski</button>
+                <button class="lang-btn" onclick="changeLanguage('pt')">🇵🇹 Português</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONFIRM MODAL HTML CONTAINER -->
+    <div class="custom-confirm-overlay" id="customConfirmModal">
+        <div class="custom-confirm-card">
+            <div class="custom-confirm-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3 class="custom-confirm-title" id="customConfirmTitle">Confirmation</h3>
+            <p class="custom-confirm-message" id="customConfirmMessage">Voulez-vous vraiment continuer ?</p>
+            <div class="custom-confirm-actions">
+                <button type="button" class="custom-confirm-btn custom-confirm-cancel" id="customConfirmCancelBtn">Annuler</button>
+                <button type="button" class="custom-confirm-btn custom-confirm-ok" id="customConfirmOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="imageModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10000; align-items:center; justify-content:center; flex-direction:column; padding:20px; box-sizing:border-box;">
+        <span onclick="closeImageModal()" style="position:absolute; top:20px; right:25px; color:white; font-size:2rem; cursor:pointer;"><i class="fa-solid fa-xmark"></i></span>
+        <img id="modalImageContent" style="max-width:90%; max-height:80vh; border-radius:8px; object-fit:contain; margin-bottom:15px;">
+        <a id="modalDownloadBtn" href="#" target="_blank" download style="background:#25d366; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:600;"><i class="fa-solid fa-download"></i> <span id="downloadImgTxt">Enregistrer l'image</span></a>
+    </div>
+
+    <script>
+        // ======================================================
+        //  PWA : Service Worker dédié à l'admin (scope isolé de suivi.html)
+        // ======================================================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw-admin.js', { scope: location.pathname })
+                    .then(reg => console.log('Service Worker admin OK :', reg.scope))
+                    .catch(err => console.log('Service Worker admin KO :', err));
+            });
+        }
+
+        let deferredInstallPrompt = null;
+        function isStandaloneMode() {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        }
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+        });
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            updateInstallItem();
+            showToast(t('installed'));
+        });
+        function updateInstallItem() {
+            const el = document.getElementById('installAppItem');
+            if (el) el.style.display = isStandaloneMode() ? 'none' : 'flex';
+        }
+        async function installApp() {
+            document.getElementById('hamburgerMenu').classList.remove('show');
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                try { await deferredInstallPrompt.userChoice; } catch (e) {}
+                deferredInstallPrompt = null;
+            } else {
+                showToast(t('installHint'), 7000);
+            }
+        }
+
+        // ======================================================
+        //  NOTIFICATIONS PUSH : inscrit cet appareil dans la table push_subscriptions
+        // ======================================================
+        // Efface les notifications restées dans la barre du téléphone (sinon l'icône de l'app garde une pastille "1")
+        async function clearPushNotifications() {
+            try {
+                if (!('serviceWorker' in navigator)) return;
+                const reg = await navigator.serviceWorker.getRegistration();
+                if (!reg) return;
+                const list = await reg.getNotifications();
+                list.forEach(function (n) { n.close(); });
+            } catch (e) {}
+        }
+        document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') clearPushNotifications(); });
+        window.addEventListener('focus', clearPushNotifications);
+        setInterval(function () { if (document.visibilityState === 'visible') clearPushNotifications(); }, 3000);
+        clearPushNotifications();
+
+        const VAPID_PUBLIC_KEY = 'BKeKEbM4SZPwpwRcvz6qAHN6r0MfVMBU3YhaU90Ej4SkzzloDCCPhJ2nZBMShg2r6SMVCNrg6QMflnMMcSnOs68';
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const raw = atob(base64);
+            const out = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+            return out;
+        }
+        async function enablePush() {
+            document.getElementById('hamburgerMenu').classList.remove('show');
+            if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+                showToast(t('pushUnsupported'), 8000);
+                return;
+            }
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    showToast(t('pushDenied'), 8000);
+                    return;
+                }
+                const reg = await navigator.serviceWorker.ready;
+                let sub = await reg.pushManager.getSubscription();
+                if (!sub) {
+                    sub = await reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                    });
+                }
+                const { error } = await supabaseClient
+                    .from('push_subscriptions')
+                    .upsert({ endpoint: sub.endpoint, subscription: sub.toJSON() }, { onConflict: 'endpoint' });
+                if (error) throw error;
+                showToast(t('pushOn'), 5000);
+            } catch (e) {
+                console.log('Push KO :', e);
+                showToast(t('pushError') + ' ' + ((e && e.message) || ''), 9000);
+            }
+        }
+
+        // ======================================================
+        //  SUPABASE
+        // ======================================================
+        const SUPABASE_URL = 'https://qujrkchtchhuiakodktv.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_VgSG2lwniPpcDtgxxf3evg_E_RJCVIV';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let allColisCache = {};
+        let activeChatClientEmail = null;
+        let currentActiveChatIdentifier = null;
+        let chatDrafts = {};
+        let lastKnownTotalUnread = 0;
+        let visitsChannel = null;
+
+        // ======================================================
+        //  TRADUCTIONS (ordre : fr, en, de, es, it, pl, pt)
+        // ======================================================
+        const LANGS = ['fr', 'en', 'de', 'es', 'it', 'pl', 'pt'];
+        const LOCALES = { fr: 'fr-FR', en: 'en-GB', de: 'de-DE', es: 'es-ES', it: 'it-IT', pl: 'pl-PL', pt: 'pt-PT' };
+
+        function lsGet(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
+        function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+        let currentLang = lsGet('adminLang', 'fr');
+        if (!LANGS.includes(currentLang)) currentLang = 'fr';
+
+        const I18N = {
+            docTitle: ['Administration & Fret - Vanguard Freight', 'Administration & Freight - Vanguard Freight', 'Verwaltung & Fracht - Vanguard Freight', 'Administración y Carga - Vanguard Freight', 'Amministrazione e Spedizioni - Vanguard Freight', 'Administracja i Fracht - Vanguard Freight', 'Administração e Frete - Vanguard Freight'],
+
+            loginTitle: ['Zone sécurisée', 'Secure Area', 'Sicherer Bereich', 'Área segura', 'Area protetta', 'Obszar zabezpieczony', 'Área segura'],
+            loginSub: ['Administration Vanguard Freight', 'Vanguard Freight Administration', 'Vanguard Freight Verwaltung', 'Administración de Vanguard Freight', 'Amministrazione Vanguard Freight', 'Administracja Vanguard Freight', 'Administração Vanguard Freight'],
+            loginError: ['Identifiants incorrects. Réessayez.', 'Incorrect credentials. Try again.', 'Falsche Anmeldedaten. Bitte erneut versuchen.', 'Credenciales incorrectas. Inténtalo de nuevo.', 'Credenziali errate. Riprova.', 'Nieprawidłowe dane logowania. Spróbuj ponownie.', 'Credenciais incorretas. Tente novamente.'],
+            emailLabel: ['Email administrateur :', 'Administrator email:', 'Administrator-E-Mail:', 'Correo del administrador:', 'Email amministratore:', 'E-mail administratora:', 'E-mail do administrador:'],
+            passLabel: ['Mot de passe administrateur :', 'Administrator password:', 'Administrator-Passwort:', 'Contraseña del administrador:', 'Password amministratore:', 'Hasło administratora:', 'Senha do administrador:'],
+            loginPh: ['Entrez votre mot de passe', 'Enter your password', 'Passwort eingeben', 'Introduce tu contraseña', 'Inserisci la password', 'Wpisz hasło', 'Digite sua senha'],
+            togglePw: ['Afficher / Masquer', 'Show / Hide', 'Anzeigen / Verbergen', 'Mostrar / Ocultar', 'Mostra / Nascondi', 'Pokaż / Ukryj', 'Mostrar / Ocultar'],
+            loginBtn: ['Se connecter', 'Log in', 'Anmelden', 'Iniciar sesión', 'Accedi', 'Zaloguj się', 'Entrar'],
+            loginBusy: ['Connexion sécurisée...', 'Secure login...', 'Sichere Anmeldung...', 'Conexión segura...', 'Accesso sicuro...', 'Bezpieczne logowanie...', 'Conexão segura...'],
+
+            headerTitle: ['Fiche Fret & Colis', 'Freight & Package Sheet', 'Fracht- & Paketblatt', 'Hoja de carga y paquete', 'Scheda spedizione e pacco', 'Karta frachtu i przesyłki', 'Ficha de frete e pacote'],
+            headerSub: ["Système d'administration et de suivi Vanguard", 'Vanguard administration & tracking system', 'Vanguard Verwaltungs- und Tracking-System', 'Sistema de administración y seguimiento Vanguard', 'Sistema di amministrazione e tracciamento Vanguard', 'System administracji i śledzenia Vanguard', 'Sistema de administração e rastreamento Vanguard'],
+            btnNew: ['Nouveau colis', 'New package', 'Neues Paket', 'Nuevo paquete', 'Nuovo pacco', 'Nowa przesyłka', 'Novo pacote'],
+
+            tipMsg: ['Messages clients', 'Customer messages', 'Kundennachrichten', 'Mensajes de clientes', 'Messaggi dei clienti', 'Wiadomości klientów', 'Mensagens de clientes'],
+            tipHome: ['Accueil du site', 'Go to website', 'Zur Website', 'Ir al sitio web', 'Vai al sito', 'Przejdź do strony', 'Ir para o site'],
+            tipLang: ['Changer de langue', 'Change language', 'Sprache ändern', 'Cambiar idioma', 'Cambia lingua', 'Zmień język', 'Mudar idioma'],
+            tipLock: ['Verrouiller', 'Lock', 'Sperren', 'Bloquear', 'Blocca', 'Zablokuj', 'Bloquear'],
+            tipTheme: ['Changer de thème', 'Change theme', 'Design wechseln', 'Cambiar tema', 'Cambia tema', 'Zmień motyw', 'Mudar tema'],
+            tipMenu: ['Options', 'Options', 'Optionen', 'Opciones', 'Opzioni', 'Opcje', 'Opções'],
+
+            menuRefresh: ['Actualiser le site', 'Refresh the site', 'Seite aktualisieren', 'Actualizar el sitio', 'Aggiorna il sito', 'Odśwież stronę', 'Atualizar o site'],
+            menuTheme: ['Mode clair / sombre', 'Light / dark mode', 'Heller / dunkler Modus', 'Modo claro / oscuro', 'Modalità chiara / scura', 'Tryb jasny / ciemny', 'Modo claro / escuro'],
+            menuPower: ['Éteindre / Veille', 'Power off / Sleep', 'Ausschalten / Standby', 'Apagar / Suspender', 'Spegni / Standby', 'Wyłącz / Uśpij', 'Desligar / Suspender'],
+            menuLang: ['Langue', 'Language', 'Sprache', 'Idioma', 'Lingua', 'Język', 'Idioma'],
+            menuFull: ['Plein écran', 'Full screen', 'Vollbild', 'Pantalla completa', 'Schermo intero', 'Pełny ekran', 'Tela cheia'],
+            menuDesktop: ['Mode ordinateur', 'Desktop mode', 'Desktop-Modus', 'Modo ordenador', 'Modalità computer', 'Tryb komputerowy', 'Modo computador'],
+            desktopOn: ['Mode ordinateur activé !', 'Desktop mode enabled!', 'Desktop-Modus aktiviert!', '¡Modo ordenador activado!', 'Modalità computer attivata!', 'Tryb komputerowy włączony!', 'Modo computador ativado!'],
+            desktopOff: ['Mode ordinateur désactivé.', 'Desktop mode disabled.', 'Desktop-Modus deaktiviert.', 'Modo ordenador desactivado.', 'Modalità computer disattivata.', 'Tryb komputerowy wyłączony.', 'Modo computador desativado.'],
+            menuInstall: ["Installer l'application", 'Install the app', 'App installieren', 'Instalar la aplicación', "Installa l'app", 'Zainstaluj aplikację', 'Instalar o aplicativo'],
+            menuPurge: ['Purger les anciens messages', 'Purge old messages', 'Alte Nachrichten löschen', 'Purgar mensajes antiguos', 'Elimina i vecchi messaggi', 'Wyczyść stare wiadomości', 'Limpar mensagens antigas'],
+            menuLogout: ['Verrouiller la session', 'Lock the session', 'Sitzung sperren', 'Bloquear la sesión', 'Blocca la sessione', 'Zablokuj sesję', 'Bloquear a sessão'],
+
+            visitsTitle: ['Visiteurs du site', 'Site visitors', 'Website-Besucher', 'Visitantes del sitio', 'Visitatori del sito', 'Odwiedzający stronę', 'Visitantes do site'],
+            visitsTotal: ['Total visites', 'Total visits', 'Besuche gesamt', 'Visitas totales', 'Visite totali', 'Łącznie wizyt', 'Total de visitas'],
+            visitLoading: ['Chargement...', 'Loading...', 'Wird geladen...', 'Cargando...', 'Caricamento...', 'Ładowanie...', 'Carregando...'],
+            visitLast: ['Dernier : {0} ({1})', 'Latest: {0} ({1})', 'Zuletzt: {0} ({1})', 'Último: {0} ({1})', 'Ultimo: {0} ({1})', 'Ostatnio: {0} ({1})', 'Último: {0} ({1})'],
+            visitNone: ['Aucune visite récente', 'No recent visit', 'Keine aktuellen Besuche', 'Ninguna visita reciente', 'Nessuna visita recente', 'Brak ostatnich wizyt', 'Nenhuma visita recente'],
+            visitErr: ['Données indisponibles', 'Data unavailable', 'Daten nicht verfügbar', 'Datos no disponibles', 'Dati non disponibili', 'Dane niedostępne', 'Dados indisponíveis'],
+            unknown: ['Inconnu', 'Unknown', 'Unbekannt', 'Desconocido', 'Sconosciuto', 'Nieznany', 'Desconhecido'],
+
+            searchPh: ['Rechercher code, client...', 'Search code, client...', 'Code, Kunde suchen...', 'Buscar código, cliente...', 'Cerca codice, cliente...', 'Szukaj kodu, klienta...', 'Pesquisar código, cliente...'],
+            activeRec: ['Enregistrements actifs :', 'Active records:', 'Aktive Datensätze:', 'Registros activos:', 'Record attivi:', 'Aktywne wpisy:', 'Registros ativos:'],
+            thTrk: ['N° de suivi', 'Tracking #', 'Sendungsnr.', 'N° de seguimiento', 'N° di tracking', 'Nr śledzenia', 'N.º de rastreio'],
+            thCli: ['Client & Dest.', 'Customer & Dest.', 'Kunde & Ziel', 'Cliente y destino', 'Cliente e dest.', 'Klient i cel', 'Cliente e destino'],
+            thFrt: ['Colis / Fret', 'Package / Freight', 'Paket / Fracht', 'Paquete / Carga', 'Pacco / Merce', 'Paczka / Fracht', 'Pacote / Frete'],
+            thSts: ['Statut global', 'Global status', 'Gesamtstatus', 'Estado global', 'Stato globale', 'Status ogólny', 'Status global'],
+            thAct: ['Actions', 'Actions', 'Aktionen', 'Acciones', 'Azioni', 'Akcje', 'Ações'],
+
+            sec1: ['1. Expédition & Suivi Dynamique', '1. Shipping & Dynamic Tracking', '1. Versand & dynamisches Tracking', '1. Envío y seguimiento dinámico', '1. Spedizione e tracciamento dinamico', '1. Wysyłka i dynamiczne śledzenie', '1. Envio e rastreamento dinâmico'],
+            lblTrk: ['Numéro de suivi :', 'Tracking number:', 'Sendungsnummer:', 'Número de seguimiento:', 'Numero di tracking:', 'Numer śledzenia:', 'Número de rastreio:'],
+            lblFrt: ['Nom du colis / fret :', 'Package / freight name:', 'Paket-/Frachtname:', 'Nombre del paquete / carga:', 'Nome del pacco / merce:', 'Nazwa paczki / frachtu:', 'Nome do pacote / frete:'],
+            lblGSts: ['Statut global :', 'Global status:', 'Gesamtstatus:', 'Estado global:', 'Stato globale:', 'Status ogólny:', 'Status global:'],
+            lblCam: ['Position camion (% / Auto) :', 'Truck position (% / Auto):', 'LKW-Position (% / Auto):', 'Posición del camión (% / Auto):', 'Posizione camion (% / Auto):', 'Pozycja ciężarówki (% / Auto):', 'Posição do caminhão (% / Auto):'],
+            lblMov: ['État du mouvement :', 'Movement state:', 'Bewegungsstatus:', 'Estado del movimiento:', 'Stato del movimento:', 'Stan ruchu:', 'Estado do movimento:'],
+            lblTrn: ['Étape de transit :', 'Transit step:', 'Transitstufe:', 'Etapa de tránsito:', 'Fase di transito:', 'Etap tranzytu:', 'Etapa de trânsito:'],
+            lblDep: ['Date & heure de départ :', 'Departure date & time:', 'Abfahrtsdatum & -zeit:', 'Fecha y hora de salida:', 'Data e ora di partenza:', 'Data i godzina wyjazdu:', 'Data e hora de partida:'],
+            lblArr: ["Date & heure d'arrivée (estimée) :", 'Estimated arrival date & time:', 'Voraussichtliche Ankunft (Datum & Zeit):', 'Fecha y hora de llegada (estimada):', 'Data e ora di arrivo (stimata):', 'Szacowana data i godzina przybycia:', 'Data e hora de chegada (estimada):'],
+
+            sec2: ['2. Vendeur / Expéditeur & Point de Départ GPS', '2. Seller / Sender & GPS Departure Point', '2. Verkäufer / Absender & GPS-Startpunkt', '2. Vendedor / Remitente y punto de salida GPS', '2. Venditore / Mittente e punto di partenza GPS', '2. Sprzedawca / Nadawca i punkt startowy GPS', '2. Vendedor / Remetente e ponto de partida GPS'],
+            sec3: ["3. Destinataire (Client) & Point d'Arrivée GPS", '3. Recipient (Customer) & GPS Arrival Point', '3. Empfänger (Kunde) & GPS-Zielpunkt', '3. Destinatario (cliente) y punto de llegada GPS', '3. Destinatario (cliente) e punto di arrivo GPS', '3. Odbiorca (klient) i punkt docelowy GPS', '3. Destinatário (cliente) e ponto de chegada GPS'],
+            lblNom: ['Nom complet :', 'Full name:', 'Vollständiger Name:', 'Nombre completo:', 'Nome completo:', 'Imię i nazwisko:', 'Nome completo:'],
+            lblTel: ['Numéro de téléphone :', 'Phone number:', 'Telefonnummer:', 'Número de teléfono:', 'Numero di telefono:', 'Numer telefonu:', 'Número de telefone:'],
+            lblMail: ['Adresse email :', 'Email address:', 'E-Mail-Adresse:', 'Correo electrónico:', 'Indirizzo email:', 'Adres e-mail:', 'Endereço de e-mail:'],
+            lblPays: ['Pays :', 'Country:', 'Land:', 'País:', 'Paese:', 'Kraj:', 'País:'],
+            lblVille: ['Ville :', 'City:', 'Stadt:', 'Ciudad:', 'Città:', 'Miasto:', 'Cidade:'],
+            lblCp: ['Code postal :', 'Postal code:', 'Postleitzahl:', 'Código postal:', 'CAP:', 'Kod pocztowy:', 'Código postal:'],
+            lblRue: ['Rue & Numéro :', 'Street & number:', 'Straße & Hausnummer:', 'Calle y número:', 'Via e numero:', 'Ulica i numer:', 'Rua e número:'],
+            lblLat: ['Latitude de départ (ex: 4.0511) :', 'Departure latitude (e.g. 4.0511):', 'Breitengrad Start (z. B. 4.0511):', 'Latitud de salida (p. ej. 4.0511):', 'Latitudine di partenza (es. 4.0511):', 'Szerokość startowa (np. 4.0511):', 'Latitude de partida (ex.: 4.0511):'],
+            lblLon: ['Longitude de départ (ex: 9.7679) :', 'Departure longitude (e.g. 9.7679):', 'Längengrad Start (z. B. 9.7679):', 'Longitud de salida (p. ej. 9.7679):', 'Longitudine di partenza (es. 9.7679):', 'Długość startowa (np. 9.7679):', 'Longitude de partida (ex.: 9.7679):'],
+            lblCLat: ["Latitude d'arrivée (ex: 3.8480) :", 'Arrival latitude (e.g. 3.8480):', 'Breitengrad Ziel (z. B. 3.8480):', 'Latitud de llegada (p. ej. 3.8480):', 'Latitudine di arrivo (es. 3.8480):', 'Szerokość docelowa (np. 3.8480):', 'Latitude de chegada (ex.: 3.8480):'],
+            lblCLon: ["Longitude d'arrivée (ex: 11.5021) :", 'Arrival longitude (e.g. 11.5021):', 'Längengrad Ziel (z. B. 11.5021):', 'Longitud de llegada (p. ej. 11.5021):', 'Longitudine di arrivo (es. 11.5021):', 'Długość docelowa (np. 11.5021):', 'Longitude de chegada (ex.: 11.5021):'],
+
+            btnSave: ['Enregistrer la fiche', 'Save sheet', 'Blatt speichern', 'Guardar ficha', 'Salva scheda', 'Zapisz kartę', 'Salvar ficha'],
+            saving: ['Enregistrement en cours...', 'Saving...', 'Wird gespeichert...', 'Guardando...', 'Salvataggio in corso...', 'Zapisywanie...', 'Salvando...'],
+            saveOk: ['Fiche enregistrée avec succès !', 'Sheet saved successfully!', 'Blatt erfolgreich gespeichert!', '¡Ficha guardada con éxito!', 'Scheda salvata con successo!', 'Karta zapisana pomyślnie!', 'Ficha salva com sucesso!'],
+            errSave: ["Erreur lors de l'enregistrement : {0}", 'Error while saving: {0}', 'Fehler beim Speichern: {0}', 'Error al guardar: {0}', 'Errore durante il salvataggio: {0}', 'Błąd podczas zapisu: {0}', 'Erro ao salvar: {0}'],
+
+            'st_REGISTERED': ['ENREGISTRÉ', 'REGISTERED', 'REGISTRIERT', 'REGISTRADO', 'REGISTRATO', 'ZAREJESTROWANA', 'REGISTRADO'],
+            'st_AWAITING DEPARTURE': ['EN ATTENTE DE DÉPART', 'AWAITING DEPARTURE', 'WARTET AUF ABFAHRT', 'A LA ESPERA DE SALIDA', 'IN ATTESA DI PARTENZA', 'OCZEKUJE NA WYJAZD', 'AGUARDANDO PARTIDA'],
+            'st_IN TRANSIT': ['EN TRANSIT', 'IN TRANSIT', 'IM TRANSIT', 'EN TRÁNSITO', 'IN TRANSITO', 'W TRANZYCIE', 'EM TRÂNSITO'],
+            'st_CUSTOMS CONTROL': ['CONTRÔLE DOUANIER', 'CUSTOMS CONTROL', 'ZOLLKONTROLLE', 'CONTROL ADUANERO', 'CONTROLLO DOGANALE', 'KONTROLA CELNA', 'CONTROLE ALFANDEGÁRIO'],
+            'st_DELIVERED': ['LIVRÉ', 'DELIVERED', 'ZUGESTELLT', 'ENTREGADO', 'CONSEGNATO', 'DORĘCZONO', 'ENTREGUE'],
+            'st_ON HOLD': ['EN ATTENTE', 'ON HOLD', 'ANGEHALTEN', 'EN ESPERA', 'IN SOSPESO', 'WSTRZYMANA', 'EM ESPERA'],
+
+            pos_auto: ['Automatique (selon dates)', 'Automatic (based on dates)', 'Automatisch (nach Datum)', 'Automático (según fechas)', 'Automatico (in base alle date)', 'Automatycznie (wg dat)', 'Automático (conforme as datas)'],
+            pos_0: ['0% (Départ)', '0% (Departure)', '0 % (Abfahrt)', '0% (Salida)', '0% (Partenza)', '0% (Wyjazd)', '0% (Partida)'],
+            pos_25: ['25% (En route)', '25% (On the way)', '25 % (Unterwegs)', '25% (En camino)', '25% (In viaggio)', '25% (W drodze)', '25% (A caminho)'],
+            pos_50: ['50% (À mi-chemin)', '50% (Halfway)', '50 % (Auf halber Strecke)', '50% (A mitad de camino)', '50% (A metà strada)', '50% (W połowie drogi)', '50% (A meio caminho)'],
+            pos_75: ['75% (Presque arrivé)', '75% (Almost there)', '75 % (Fast am Ziel)', '75% (Casi llegado)', '75% (Quasi arrivato)', '75% (Prawie na miejscu)', '75% (Quase chegando)'],
+            pos_100: ['100% (Arrivé / Livré)', '100% (Arrived / Delivered)', '100 % (Angekommen / Zugestellt)', '100% (Llegado / Entregado)', '100% (Arrivato / Consegnato)', '100% (Dotarło / Doręczono)', '100% (Chegou / Entregue)'],
+            mov_normal: ['Mouvement normal', 'Normal movement', 'Normale Bewegung', 'Movimiento normal', 'Movimento normale', 'Normalny ruch', 'Movimento normal'],
+            mov_pause: ['Bloqué en attente (panne / problème)', 'Blocked on hold (breakdown / problem)', 'Blockiert (Panne / Problem)', 'Bloqueado en espera (avería / problema)', 'Bloccato in attesa (guasto / problema)', 'Zablokowany (awaria / problem)', 'Bloqueado em espera (avaria / problema)'],
+            step1: ['1. Colis enregistré', '1. Package registered', '1. Paket registriert', '1. Paquete registrado', '1. Pacco registrato', '1. Przesyłka zarejestrowana', '1. Pacote registrado'],
+            step2: ['2. En transit', '2. In transit', '2. Im Transit', '2. En tránsito', '2. In transito', '2. W tranzycie', '2. Em trânsito'],
+            step3: ['3. Contrôle douanier', '3. Customs clearance', '3. Zollabfertigung', '3. Control aduanero', '3. Controllo doganale', '3. Odprawa celna', '3. Controle alfandegário'],
+            step4: ['4. Arrivé au centre de tri', '4. Arrived at sorting center', '4. Im Sortierzentrum angekommen', '4. Llegado al centro de clasificación', '4. Arrivato al centro di smistamento', '4. Dotarło do centrum sortowania', '4. Chegou ao centro de triagem'],
+            step5: ['5. Livré', '5. Delivered', '5. Zugestellt', '5. Entregado', '5. Consegnato', '5. Doręczono', '5. Entregue'],
+
+            eg: ['ex :', 'e.g.', 'z. B.', 'p. ej.', 'es.', 'np.', 'ex.'],
+            phColis: ['Lot pièces auto', 'Car parts lot', 'Autoteile-Posten', 'Lote de piezas de auto', 'Lotto ricambi auto', 'Partia części samochodowych', 'Lote de peças auto'],
+            phExpNom: ['Nom ou entreprise', 'Name or company', 'Name oder Firma', 'Nombre o empresa', 'Nome o azienda', 'Imię lub firma', 'Nome ou empresa'],
+            phClientNom: ['Nom du client', 'Customer name', 'Kundenname', 'Nombre del cliente', 'Nome del cliente', 'Nazwa klienta', 'Nome do cliente'],
+            cFrance: ['France', 'France', 'Frankreich', 'Francia', 'Francia', 'Francja', 'França'],
+            cParis: ['Paris', 'Paris', 'Paris', 'París', 'Parigi', 'Paryż', 'Paris'],
+            cCameroun: ['Cameroun', 'Cameroon', 'Kamerun', 'Camerún', 'Camerun', 'Kamerun', 'Camarões'],
+            phStreetEx: ['12 rue de la Paix', '12 Peace Street', 'Friedensstraße 12', 'Calle de la Paz 12', 'Via della Pace 12', 'ul. Pokoju 12', 'Rua da Paz 12'],
+            phStreetCl: ['Boulevard Akwa', 'Akwa Boulevard', 'Akwa-Boulevard', 'Bulevar Akwa', 'Viale Akwa', 'Bulwar Akwa', 'Avenida Akwa'],
+
+            msgTitle: ['Messagerie centrale', 'Central messaging', 'Zentrale Nachrichten', 'Mensajería central', 'Messaggistica centrale', 'Centralna skrzynka wiadomości', 'Mensagens centrais'],
+            purgeAll: ['Tout vider', 'Clear all', 'Alle löschen', 'Vaciar todo', 'Svuota tutto', 'Wyczyść wszystko', 'Limpar tudo'],
+            backDash: ['Retour au tableau de bord', 'Back to dashboard', 'Zurück zum Dashboard', 'Volver al panel', 'Torna alla dashboard', 'Powrót do panelu', 'Voltar ao painel'],
+            loadChats: ['Chargement des discussions...', 'Loading chats...', 'Chats werden geladen...', 'Cargando chats...', 'Caricamento chat...', 'Ładowanie czatów...', 'Carregando conversas...'],
+            noMsg: ['Aucun message pour le moment.', 'No messages yet.', 'Noch keine Nachrichten.', 'Aún no hay mensajes.', 'Nessun messaggio per ora.', 'Brak wiadomości.', 'Nenhuma mensagem por enquanto.'],
+            anonVisitor: ['Visiteur anonyme', 'Anonymous visitor', 'Anonymer Besucher', 'Visitante anónimo', 'Visitatore anonimo', 'Anonimowy odwiedzający', 'Visitante anônimo'],
+            clientFret: ['Client Fret', 'Freight client', 'Frachtkunde', 'Cliente de carga', 'Cliente spedizioni', 'Klient frachtu', 'Cliente de frete'],
+            clientKnown: ['Client reconnu', 'Known client', 'Bekannter Kunde', 'Cliente reconocido', 'Cliente riconosciuto', 'Znany klient', 'Cliente reconhecido'],
+            visitor: ['Visiteur', 'Visitor', 'Besucher', 'Visitante', 'Visitatore', 'Odwiedzający', 'Visitante'],
+            photo: ['Photo', 'Photo', 'Foto', 'Foto', 'Foto', 'Zdjęcie', 'Foto'],
+            clientWord: ['Client', 'Customer', 'Kunde', 'Cliente', 'Cliente', 'Klient', 'Cliente'],
+            del: ['Supprimer', 'Delete', 'Löschen', 'Eliminar', 'Elimina', 'Usuń', 'Excluir'],
+            writePh: ['Écrire un message...', 'Write a message...', 'Nachricht schreiben...', 'Escribe un mensaje...', 'Scrivi un messaggio...', 'Napisz wiadomość...', 'Escreva uma mensagem...'],
+            tipPhoto: ['Envoyer une photo', 'Send a photo', 'Foto senden', 'Enviar una foto', 'Invia una foto', 'Wyślij zdjęcie', 'Enviar uma foto'],
+            tipSend: ['Envoyer', 'Send', 'Senden', 'Enviar', 'Invia', 'Wyślij', 'Enviar'],
+            tipBack: ['Retour', 'Back', 'Zurück', 'Volver', 'Indietro', 'Wstecz', 'Voltar'],
+
+            qr1: ['Colis enregistré', 'Package registered', 'Paket registriert', 'Paquete registrado', 'Pacco registrato', 'Przesyłka zarejestrowana', 'Pacote registrado'],
+            qr2: ['En transit', 'In transit', 'Im Transit', 'En tránsito', 'In transito', 'W tranzycie', 'Em trânsito'],
+            qr3: ['Paiement reçu', 'Payment received', 'Zahlung erhalten', 'Pago recibido', 'Pagamento ricevuto', 'Płatność otrzymana', 'Pagamento recebido'],
+            qr4: ['Livré', 'Delivered', 'Zugestellt', 'Entregado', 'Consegnato', 'Doręczono', 'Entregue'],
+            qr1m: ['Bonjour, votre colis a bien été enregistré.', 'Hello, your package has been registered.', 'Guten Tag, Ihr Paket wurde registriert.', 'Hola, su paquete ha sido registrado.', 'Buongiorno, il suo pacco è stato registrato.', 'Dzień dobry, Państwa przesyłka została zarejestrowana.', 'Olá, seu pacote foi registrado.'],
+            qr2m: ['Votre colis est actuellement en transit.', 'Your package is currently in transit.', 'Ihr Paket befindet sich derzeit im Transit.', 'Su paquete se encuentra actualmente en tránsito.', 'Il suo pacco è attualmente in transito.', 'Państwa przesyłka jest obecnie w tranzycie.', 'Seu pacote está atualmente em trânsito.'],
+            qr3m: ['Le paiement a bien été reçu. Merci !', 'Payment has been received. Thank you!', 'Die Zahlung ist eingegangen. Vielen Dank!', 'El pago ha sido recibido. ¡Gracias!', 'Il pagamento è stato ricevuto. Grazie!', 'Płatność została otrzymana. Dziękujemy!', 'O pagamento foi recebido. Obrigado!'],
+            qr4m: ['Le colis est bien arrivé à destination.', 'The package has arrived at its destination.', 'Das Paket ist am Zielort angekommen.', 'El paquete ha llegado a su destino.', 'Il pacco è arrivato a destinazione.', 'Przesyłka dotarła do miejsca przeznaczenia.', 'O pacote chegou ao destino.'],
+
+            imgSending: ["Envoi de l'image en cours...", 'Sending image...', 'Bild wird gesendet...', 'Enviando imagen...', 'Invio immagine in corso...', 'Wysyłanie obrazu...', 'Enviando imagem...'],
+            errImg: ['Erreur upload image : {0}', 'Image upload error: {0}', 'Fehler beim Bild-Upload: {0}', 'Error al subir la imagen: {0}', 'Errore caricamento immagine: {0}', 'Błąd przesyłania obrazu: {0}', 'Erro ao enviar a imagem: {0}'],
+            errSend: ["Erreur d'envoi : {0}", 'Send error: {0}', 'Fehler beim Senden: {0}', 'Error de envío: {0}', 'Errore di invio: {0}', 'Błąd wysyłania: {0}', 'Erro de envio: {0}'],
+
+            cancel: ['Annuler', 'Cancel', 'Abbrechen', 'Cancelar', 'Annulla', 'Anuluj', 'Cancelar'],
+            confirmTitle: ['Confirmation', 'Confirmation', 'Bestätigung', 'Confirmación', 'Conferma', 'Potwierdzenie', 'Confirmação'],
+            confirmMsg: ['Voulez-vous vraiment continuer ?', 'Do you really want to continue?', 'Möchten Sie wirklich fortfahren?', '¿Realmente desea continuar?', 'Vuoi davvero continuare?', 'Czy na pewno chcesz kontynuować?', 'Deseja realmente continuar?'],
+            purgeTitle: ['Purger les messages', 'Purge messages', 'Nachrichten löschen', 'Purgar mensajes', 'Elimina i messaggi', 'Wyczyść wiadomości', 'Limpar mensagens'],
+            purgeMsg: ["Voulez-vous vraiment supprimer TOUS les messages et anciennes conversations pour libérer de l'espace dans la base de données ?", 'Do you really want to delete ALL messages and old conversations to free up space in the database?', 'Möchten Sie wirklich ALLE Nachrichten und alten Unterhaltungen löschen, um Speicherplatz in der Datenbank freizugeben?', '¿Realmente desea eliminar TODOS los mensajes y conversaciones antiguas para liberar espacio en la base de datos?', 'Vuoi davvero eliminare TUTTI i messaggi e le vecchie conversazioni per liberare spazio nel database?', 'Czy na pewno chcesz usunąć WSZYSTKIE wiadomości i stare rozmowy, aby zwolnić miejsce w bazie danych?', 'Deseja realmente excluir TODAS as mensagens e conversas antigas para liberar espaço no banco de dados?'],
+            purgeOk: ['Tous les messages ont été purgés !', 'All messages have been purged!', 'Alle Nachrichten wurden gelöscht!', '¡Todos los mensajes han sido purgados!', 'Tutti i messaggi sono stati eliminati!', 'Wszystkie wiadomości zostały wyczyszczone!', 'Todas as mensagens foram limpas!'],
+            errPurge: ['Erreur lors de la purge : {0}', 'Error while purging: {0}', 'Fehler beim Löschen: {0}', 'Error al purgar: {0}', "Errore durante l'eliminazione: {0}", 'Błąd podczas czyszczenia: {0}', 'Erro ao limpar: {0}'],
+            delConvTitle: ['Supprimer la conversation', 'Delete conversation', 'Unterhaltung löschen', 'Eliminar la conversación', 'Elimina la conversazione', 'Usuń rozmowę', 'Excluir a conversa'],
+            delConvMsg: ["Voulez-vous vraiment supprimer tout l'historique de cette conversation ?", 'Do you really want to delete the entire history of this conversation?', 'Möchten Sie wirklich den gesamten Verlauf dieser Unterhaltung löschen?', '¿Realmente desea eliminar todo el historial de esta conversación?', "Vuoi davvero eliminare l'intera cronologia di questa conversazione?", 'Czy na pewno chcesz usunąć całą historię tej rozmowy?', 'Deseja realmente excluir todo o histórico desta conversa?'],
+            convDeleted: ['Conversation supprimée.', 'Conversation deleted.', 'Unterhaltung gelöscht.', 'Conversación eliminada.', 'Conversazione eliminata.', 'Rozmowa usunięta.', 'Conversa excluída.'],
+            delColisTitle: ['Suppression du colis', 'Delete package', 'Paket löschen', 'Eliminar paquete', 'Elimina pacco', 'Usuwanie przesyłki', 'Excluir pacote'],
+            delColisMsg: ['Voulez-vous vraiment supprimer le colis {0} ?', 'Do you really want to delete package {0}?', 'Möchten Sie das Paket {0} wirklich löschen?', '¿Realmente desea eliminar el paquete {0}?', 'Vuoi davvero eliminare il pacco {0}?', 'Czy na pewno chcesz usunąć przesyłkę {0}?', 'Deseja realmente excluir o pacote {0}?'],
+            colisDeleted: ['Colis supprimé !', 'Package deleted!', 'Paket gelöscht!', '¡Paquete eliminado!', 'Pacco eliminato!', 'Przesyłka usunięta!', 'Pacote excluído!'],
+            errDelete: ['Erreur suppression : {0}', 'Deletion error: {0}', 'Fehler beim Löschen: {0}', 'Error al eliminar: {0}', 'Errore di eliminazione: {0}', 'Błąd usuwania: {0}', 'Erro ao excluir: {0}'],
+            noColis: ['Aucun colis enregistré.', 'No package registered.', 'Keine Pakete registriert.', 'Ningún paquete registrado.', 'Nessun pacco registrato.', 'Brak zarejestrowanych przesyłek.', 'Nenhum pacote registrado.'],
+
+            tipEdit: ['Modifier la fiche', 'Edit sheet', 'Blatt bearbeiten', 'Editar ficha', 'Modifica scheda', 'Edytuj kartę', 'Editar ficha'],
+            tipView: ['Voir le suivi client', 'View customer tracking', 'Kunden-Tracking ansehen', 'Ver seguimiento del cliente', 'Vedi tracciamento cliente', 'Zobacz śledzenie klienta', 'Ver rastreamento do cliente'],
+            tipChat: ['Envoyer un message', 'Send a message', 'Nachricht senden', 'Enviar un mensaje', 'Invia un messaggio', 'Wyślij wiadomość', 'Enviar uma mensagem'],
+            tipDelColis: ['Supprimer la fiche', 'Delete sheet', 'Blatt löschen', 'Eliminar ficha', 'Elimina scheda', 'Usuń kartę', 'Excluir ficha'],
+
+            formNew: ['Nouveau colis : remplissez le formulaire.', 'New package: fill in the form.', 'Neues Paket: Formular ausfüllen.', 'Nuevo paquete: rellene el formulario.', 'Nuovo pacco: compila il modulo.', 'Nowa przesyłka: wypełnij formularz.', 'Novo pacote: preencha o formulário.'],
+            formLoaded: ['Fiche chargée pour modification !', 'Sheet loaded for editing!', 'Blatt zum Bearbeiten geladen!', '¡Ficha cargada para editar!', 'Scheda caricata per la modifica!', 'Karta załadowana do edycji!', 'Ficha carregada para edição!'],
+            formReset: ['Formulaire réinitialisé pour un nouveau colis.', 'Form reset for a new package.', 'Formular für ein neues Paket zurückgesetzt.', 'Formulario restablecido para un nuevo paquete.', 'Modulo reimpostato per un nuovo pacco.', 'Formularz zresetowany dla nowej przesyłki.', 'Formulário redefinido para um novo pacote.'],
+            trkCopied: ['Numéro de suivi copié !', 'Tracking number copied!', 'Sendungsnummer kopiert!', '¡Número de seguimiento copiado!', 'Numero di tracking copiato!', 'Numer śledzenia skopiowany!', 'Número de rastreio copiado!'],
+            langUpdated: ['Langue mise à jour !', 'Language updated!', 'Sprache aktualisiert!', '¡Idioma actualizado!', 'Lingua aggiornata!', 'Język zaktualizowany!', 'Idioma atualizado!'],
+            themeDark: ['Mode sombre activé !', 'Dark mode enabled!', 'Dunkelmodus aktiviert!', '¡Modo oscuro activado!', 'Modalità scura attivata!', 'Tryb ciemny włączony!', 'Modo escuro ativado!'],
+            themeLight: ['Mode clair activé !', 'Light mode enabled!', 'Hellmodus aktiviert!', '¡Modo claro activado!', 'Modalità chiara attivata!', 'Tryb jasny włączony!', 'Modo claro ativado!'],
+            sleepOn: ["Mode veille activé. Cliquez n'importe où pour réveiller.", 'Sleep mode on. Tap anywhere to wake up.', 'Standby-Modus aktiv. Tippen Sie irgendwo, um aufzuwecken.', 'Modo suspensión activado. Toca en cualquier lugar para despertar.', 'Modalità standby attiva. Tocca ovunque per riattivare.', 'Tryb uśpienia włączony. Dotknij dowolnego miejsca, aby wybudzić.', 'Modo de suspensão ativado. Toque em qualquer lugar para reativar.'],
+            wake: ['Application réveillée !', 'App woken up!', 'Anwendung aufgeweckt!', '¡Aplicación reactivada!', 'App riattivata!', 'Aplikacja wybudzona!', 'Aplicativo reativado!'],
+            fullErr: ['Erreur passage en plein écran : {0}', 'Full screen error: {0}', 'Fehler beim Vollbildmodus: {0}', 'Error al pasar a pantalla completa: {0}', 'Errore schermo intero: {0}', 'Błąd pełnego ekranu: {0}', 'Erro ao entrar em tela cheia: {0}'],
+            downImg: ["Enregistrer l'image", 'Save image', 'Bild speichern', 'Guardar imagen', 'Salva immagine', 'Zapisz obraz', 'Salvar imagem'],
+            langTitle: ['Choisir la langue', 'Choose language', 'Sprache wählen', 'Elegir idioma', 'Scegli la lingua', 'Wybierz język', 'Escolher idioma'],
+            langFilter: ['Filtrer les langues...', 'Filter languages...', 'Sprachen filtern...', 'Filtrar idiomas...', 'Filtra le lingue...', 'Filtruj języki...', 'Filtrar idiomas...'],
+            installHint: ["Pour installer : menu du navigateur (⋮) → « Installer l'application », ou sur iPhone Partager → « Sur l'écran d'accueil ».", 'To install: browser menu (⋮) → "Install app", or on iPhone Share → "Add to Home Screen".', 'Zum Installieren: Browsermenü (⋮) → „App installieren“, oder auf dem iPhone Teilen → „Zum Home-Bildschirm“.', 'Para instalar: menú del navegador (⋮) → «Instalar aplicación», o en iPhone Compartir → «Añadir a pantalla de inicio».', 'Per installare: menu del browser (⋮) → «Installa app», oppure su iPhone Condividi → «Aggiungi a Home».', 'Aby zainstalować: menu przeglądarki (⋮) → „Zainstaluj aplikację”, na iPhonie Udostępnij → „Do ekranu głównego”.', 'Para instalar: menu do navegador (⋮) → «Instalar aplicativo», ou no iPhone Compartilhar → «Adicionar à Tela de Início».'],
+            installed: ['Application installée !', 'App installed!', 'App installiert!', '¡Aplicación instalada!', 'App installata!', 'Aplikacja zainstalowana!', 'Aplicativo instalado!']
+        };
+
+        // Notifications push (ajout)
+        Object.assign(I18N, {
+            menuPush: ['Activer les notifications', 'Enable notifications', 'Benachrichtigungen aktivieren', 'Activar notificaciones', 'Attiva le notifiche', 'Włącz powiadomienia', 'Ativar notificações'],
+            pushOn: ['Notifications activées sur cet appareil !', 'Notifications enabled on this device!', 'Benachrichtigungen auf diesem Gerät aktiviert!', '¡Notificaciones activadas en este dispositivo!', 'Notifiche attivate su questo dispositivo!', 'Powiadomienia włączone na tym urządzeniu!', 'Notificações ativadas neste dispositivo!'],
+            pushDenied: ['Notifications refusées. Autorise-les dans les réglages du navigateur pour ce site.', 'Notifications blocked. Allow them in the browser settings for this site.', 'Benachrichtigungen blockiert. Erlaube sie in den Browsereinstellungen dieser Seite.', 'Notificaciones bloqueadas. Permítelas en los ajustes del navegador para este sitio.', 'Notifiche bloccate. Consentile nelle impostazioni del browser per questo sito.', 'Powiadomienia zablokowane. Zezwól na nie w ustawieniach przeglądarki dla tej strony.', 'Notificações bloqueadas. Permita-as nas configurações do navegador para este site.'],
+            pushUnsupported: ["Ce navigateur ne gère pas les notifications. Sur iPhone, installe d'abord l'application sur l'écran d'accueil.", 'This browser does not support notifications. On iPhone, first add the app to the Home Screen.', 'Dieser Browser unterstützt keine Benachrichtigungen. Auf dem iPhone zuerst die App zum Home-Bildschirm hinzufügen.', 'Este navegador no admite notificaciones. En iPhone, primero añade la app a la pantalla de inicio.', "Questo browser non supporta le notifiche. Su iPhone, aggiungi prima l'app alla schermata Home.", 'Ta przeglądarka nie obsługuje powiadomień. Na iPhonie najpierw dodaj aplikację do ekranu głównego.', 'Este navegador não suporta notificações. No iPhone, adicione primeiro o app à Tela de Início.'],
+            pushError: ["Échec de l'activation des notifications :", 'Could not enable notifications:', 'Benachrichtigungen konnten nicht aktiviert werden:', 'No se pudieron activar las notificaciones:', 'Impossibile attivare le notifiche:', 'Nie udało się włączyć powiadomień:', 'Não foi possível ativar as notificações:']
+        });
+
+        // Messagerie : masquer / sélectionner / supprimer (ajout)
+        Object.assign(I18N, {
+    "selMode": [
+        "Sélectionner",
+        "Select",
+        "Auswählen",
+        "Seleccionar",
+        "Seleziona",
+        "Wybierz",
+        "Selecionar"
+    ],
+    "selCancel": [
+        "Annuler",
+        "Cancel",
+        "Abbrechen",
+        "Cancelar",
+        "Annulla",
+        "Anuluj",
+        "Cancelar"
+    ],
+    "hiddenTitle": [
+        "Masquées",
+        "Hidden",
+        "Ausgeblendet",
+        "Ocultas",
+        "Nascoste",
+        "Ukryte",
+        "Ocultas"
+    ],
+    "backToList": [
+        "Retour à la liste",
+        "Back to list",
+        "Zurück zur Liste",
+        "Volver a la lista",
+        "Torna all'elenco",
+        "Wróć do listy",
+        "Voltar à lista"
+    ],
+    "selHide": [
+        "Masquer",
+        "Hide",
+        "Ausblenden",
+        "Ocultar",
+        "Nascondi",
+        "Ukryj",
+        "Ocultar"
+    ],
+    "selUnhide": [
+        "Afficher",
+        "Show",
+        "Einblenden",
+        "Mostrar",
+        "Mostra",
+        "Pokaż",
+        "Mostrar"
+    ],
+    "selDelete": [
+        "Supprimer",
+        "Delete",
+        "Löschen",
+        "Eliminar",
+        "Elimina",
+        "Usuń",
+        "Excluir"
+    ],
+    "hiddenToast": [
+        "Conversation masquée",
+        "Conversation hidden",
+        "Unterhaltung ausgeblendet",
+        "Conversación oculta",
+        "Conversazione nascosta",
+        "Rozmowa ukryta",
+        "Conversa oculta"
+    ],
+    "shownToast": [
+        "Conversations de nouveau visibles",
+        "Conversations visible again",
+        "Unterhaltungen wieder sichtbar",
+        "Conversaciones visibles de nuevo",
+        "Conversazioni di nuovo visibili",
+        "Rozmowy znów widoczne",
+        "Conversas visíveis novamente"
+    ],
+    "selNone": [
+        "Sélectionnez au moins une conversation",
+        "Select at least one conversation",
+        "Wählen Sie mindestens eine Unterhaltung",
+        "Seleccione al menos una conversación",
+        "Seleziona almeno una conversazione",
+        "Wybierz co najmniej jedną rozmowę",
+        "Selecione pelo menos uma conversa"
+    ],
+    "delSelTitle": [
+        "Supprimer définitivement",
+        "Delete permanently",
+        "Endgültig löschen",
+        "Eliminar definitivamente",
+        "Elimina definitivamente",
+        "Usuń na stałe",
+        "Excluir definitivamente"
+    ],
+    "delSelMsg": [
+        "Supprimer {0} conversation(s) avec leurs photos ? Cette action est irréversible.",
+        "Delete {0} conversation(s) with their photos? This cannot be undone.",
+        "{0} Unterhaltung(en) mit Fotos löschen? Dies kann nicht rückgängig gemacht werden.",
+        "¿Eliminar {0} conversación(es) con sus fotos? Esta acción es irreversible.",
+        "Eliminare {0} conversazione/i con le foto? Azione irreversibile.",
+        "Usunąć {0} rozmów wraz ze zdjęciami? Tej operacji nie można cofnąć.",
+        "Excluir {0} conversa(s) com as fotos? Esta ação é irreversível."
+    ],
+    "selDeleted": [
+        "Conversations supprimées",
+        "Conversations deleted",
+        "Unterhaltungen gelöscht",
+        "Conversaciones eliminadas",
+        "Conversazioni eliminate",
+        "Rozmowy usunięte",
+        "Conversas excluídas"
+    ],
+    "noHidden": [
+        "Aucune conversation masquée",
+        "No hidden conversations",
+        "Keine ausgeblendeten Unterhaltungen",
+        "No hay conversaciones ocultas",
+        "Nessuna conversazione nascosta",
+        "Brak ukrytych rozmów",
+        "Nenhuma conversa oculta"
+    ]
+});
+
+        Object.assign(I18N, {
+    "clearHist": [
+        "Vider l'historique",
+        "Clear history",
+        "Verlauf leeren",
+        "Vaciar historial",
+        "Svuota cronologia",
+        "Wyczyść historię",
+        "Limpar histórico"
+    ],
+    "clearHistTitle": [
+        "Supprimer l'historique (le client reste dans la liste)",
+        "Delete history (the client stays in the list)",
+        "Verlauf löschen (der Kunde bleibt in der Liste)",
+        "Borrar historial (el cliente permanece en la lista)",
+        "Elimina cronologia (il cliente resta nell'elenco)",
+        "Usuń historię (klient zostaje na liście)",
+        "Apagar histórico (o cliente permanece na lista)"
+    ],
+    "clearHistMsg": [
+        "Supprimer tous les messages de cette conversation ? Le client restera dans la liste.",
+        "Delete all messages in this conversation? The client will stay in the list.",
+        "Alle Nachrichten dieser Unterhaltung löschen? Der Kunde bleibt in der Liste.",
+        "¿Eliminar todos los mensajes de esta conversación? El cliente permanecerá en la lista.",
+        "Eliminare tutti i messaggi di questa conversazione? Il cliente resterà nell'elenco.",
+        "Usunąć wszystkie wiadomości z tej rozmowy? Klient pozostanie na liście.",
+        "Excluir todas as mensagens desta conversa? O cliente permanecerá na lista."
+    ],
+    "histCleared": [
+        "Historique supprimé. Le client reste dans la liste.",
+        "History deleted. The client stays in the list.",
+        "Verlauf gelöscht. Der Kunde bleibt in der Liste.",
+        "Historial borrado. El cliente permanece en la lista.",
+        "Cronologia eliminata. Il cliente resta nell'elenco.",
+        "Historia usunięta. Klient pozostaje na liście.",
+        "Histórico apagado. O cliente permanece na lista."
+    ],
+    "delClient": [
+        "Supprimer le client",
+        "Delete client",
+        "Kunde löschen",
+        "Eliminar cliente",
+        "Elimina cliente",
+        "Usuń klienta",
+        "Excluir cliente"
+    ],
+    "delClientTitle": [
+        "Supprimer le client",
+        "Delete client",
+        "Kunde löschen",
+        "Eliminar cliente",
+        "Elimina cliente",
+        "Usuń klienta",
+        "Excluir cliente"
+    ],
+    "delClientMsg": [
+        "Supprimer définitivement ce client et tous ses messages de la liste ?",
+        "Permanently delete this client and all their messages from the list?",
+        "Diesen Kunden und alle seine Nachrichten endgültig aus der Liste löschen?",
+        "¿Eliminar definitivamente a este cliente y todos sus mensajes de la lista?",
+        "Eliminare definitivamente questo cliente e tutti i suoi messaggi dall'elenco?",
+        "Trwale usunąć tego klienta i wszystkie jego wiadomości z listy?",
+        "Excluir definitivamente este cliente e todas as suas mensagens da lista?"
+    ],
+    "clientDeleted": [
+        "Client supprimé.",
+        "Client deleted.",
+        "Kunde gelöscht.",
+        "Cliente eliminado.",
+        "Cliente eliminato.",
+        "Klient usunięty.",
+        "Cliente excluído."
+    ],
+    "noMsgYet": [
+        "Aucun message",
+        "No messages",
+        "Keine Nachrichten",
+        "Sin mensajes",
+        "Nessun messaggio",
+        "Brak wiadomości",
+        "Sem mensagens"
+    ]
+});
+
+        function t(key, ...args) {
+            const entry = I18N[key];
+            if (!entry) return key;
+            let s = entry[LANGS.indexOf(currentLang)] || entry[0];
+            args.forEach((a, i) => { s = s.split('{' + i + '}').join(a); });
+            return s;
+        }
+
+        // id d'élément -> clé de traduction (texte)
+        const TXT_BINDINGS = {
+            loginTitleTxt: 'loginTitle', loginSubTxt: 'loginSub', loginErrorMsg: 'loginError',
+            labelEmailTxt: 'emailLabel', labelPassTxt: 'passLabel', loginBtnText: 'loginBtn',
+            cardHeaderTitle: 'headerTitle', cardHeaderSub: 'headerSub', btnNewColisTxt: 'btnNew',
+            menuRefreshTxt: 'menuRefresh', menuThemeTxt: 'menuTheme', menuPowerTxt: 'menuPower', menuLangTxt: 'menuLang',
+            menuFullTxt: 'menuFull', menuDesktopTxt: 'menuDesktop', menuInstallTxt: 'menuInstall', menuPushTxt: 'menuPush', menuPurgeTxt: 'menuPurge', menuLogoutTxt: 'menuLogout',
+            visitTitleTxt: 'visitsTitle', visitTotalTxt: 'visitsTotal', activeRecordsTxt: 'activeRec',
+            thTracking: 'thTrk', thClient: 'thCli', thFreight: 'thFrt', thStatus: 'thSts', thActions: 'thAct',
+            sec1Title: 'sec1', lblTracking: 'lblTrk', lblFreightName: 'lblFrt', lblGlobalStatus: 'lblGSts', lblCamionPos: 'lblCam',
+            lblMovState: 'lblMov', lblTransitStep: 'lblTrn', lblDepDate: 'lblDep', lblArrDate: 'lblArr',
+            sec2Title: 'sec2', lblExpName: 'lblNom', lblExpTel: 'lblTel', lblExpEmail: 'lblMail', lblExpPays: 'lblPays',
+            lblExpVille: 'lblVille', lblExpCp: 'lblCp', lblExpRue: 'lblRue', lblExpLat: 'lblLat', lblExpLon: 'lblLon',
+            sec3Title: 'sec3', lblClientName: 'lblNom', lblClientTel: 'lblTel', lblClientEmail: 'lblMail', lblClientPays: 'lblPays',
+            lblClientVille: 'lblVille', lblClientCp: 'lblCp', lblClientRue: 'lblRue', lblClientLat: 'lblCLat', lblClientLon: 'lblCLon',
+            btnSaveText: 'btnSave', msgSectionTitle: 'msgTitle', purgeAllBtnTxt: 'purgeAll', backDashboardTxt: 'backDash',
+            loadingChatsTxt: 'loadChats', delConvTxt: 'del', downloadImgTxt: 'downImg',
+            qr1: 'qr1', qr2: 'qr2', qr3: 'qr3', qr4: 'qr4',
+            customConfirmCancelBtn: 'cancel', customConfirmTitle: 'confirmTitle', customConfirmMessage: 'confirmMsg'
+        };
+        Object.assign(TXT_BINDINGS, { hideConvTxt: 'selHide', clearHistTxt: 'clearHist', delConvTxt: 'delClient' });
+        const PH_BINDINGS = {
+            adminPasswordInput: 'loginPh', searchInput: 'searchPh', colisNom: 'phColis', expediteurNom: 'phExpNom',
+            clientNom: 'phClientNom', adminReplyInput: 'writePh', langSearchInput: 'langFilter'
+        };
+        // placeholders de type "ex: ..." (clé i18n ou valeur brute)
+        const PH_EXAMPLES = {
+            expediteurPays: 'cFrance', expediteurVille: 'cParis', expediteurCp: '75001', expediteurRue: 'phStreetEx',
+            startLat: '4.0511', startLon: '9.7679',
+            clientPays: 'cCameroun', clientVille: 'Douala', clientCp: '00237', clientRue: 'phStreetCl',
+            endLat: '3.8480', endLon: '11.5021'
+        };
+        const TITLE_BINDINGS = [
+            ['.header-controls .btn-msg', 'tipMsg'],
+            ['#btnGoHome', 'tipHome'],
+            ['.header-controls .btn-lock', 'tipLock'],
+            ['#themeToggleBtn', 'tipTheme'],
+            ['#menuToggleBtn', 'tipMenu'],
+            ['#loginOverlay button[onclick="togglePasswordVisibility()"]', 'togglePw'],
+            ['#btnPhoto', 'tipPhoto'], ['#btnSend', 'tipSend'], ['#btnChatBack', 'tipBack'], ['#btnDelConv', 'delClientTitle'], ['#btnClearHist', 'clearHistTitle']
+        ];
+        const OPTION_BINDINGS = {
+            statutGlobal: { 'REGISTERED': 'st_REGISTERED', 'AWAITING DEPARTURE': 'st_AWAITING DEPARTURE', 'IN TRANSIT': 'st_IN TRANSIT', 'CUSTOMS CONTROL': 'st_CUSTOMS CONTROL', 'DELIVERED': 'st_DELIVERED', 'ON HOLD': 'st_ON HOLD' },
+            positionCamion: { 'auto': 'pos_auto', '0': 'pos_0', '25': 'pos_25', '50': 'pos_50', '75': 'pos_75', '100': 'pos_100' },
+            etatMouvement: { 'normal': 'mov_normal', 'pause': 'mov_pause' },
+            positionActuelle: { 'Package registered': 'step1', 'In transit': 'step2', 'Customs clearance in progress': 'step3', 'Arrived at sorting center': 'step4', 'Delivered': 'step5' }
+        };
+
+        function setText(el, txt) {
+            if (!el) return;
+            if (!el.children.length) { el.textContent = txt; return; }
+            let target = null;
+            el.childNodes.forEach(n => { if (n.nodeType === 3 && n.nodeValue.trim()) target = n; });
+            if (target) target.nodeValue = ' ' + txt;
+            else el.appendChild(document.createTextNode(' ' + txt));
+        }
+
+
+        // Les heures programmées suivent l'horloge de la personne qui regarde :
+        // "07:00" veut dire 07:00 sur le téléphone du client (jamais de décalage entre pays).
+        function parseSchedDate(v) {
+            if (!v) return NaN;
+            return new Date(String(v).trim().replace(' ', 'T')).getTime();
+        }
+
+        // Même logique automatique que le suivi : date de départ atteinte -> transit, date d'arrivée atteinte -> livré
+        function effStatutGlobal(d) {
+            const base = d.statutGlobal || 'REGISTERED';
+            if (d.etatMouvement === 'pause' || d.camionEtat === 'en_pause') return base;
+            if (!['REGISTERED', 'AWAITING DEPARTURE', 'IN TRANSIT'].includes(base)) return base;
+            const now = Date.now();
+            const dep = parseSchedDate(d.dateDepart), arr = parseSchedDate(d.dateArrivee);
+            if (isFinite(arr) && now >= arr && (base === 'IN TRANSIT' || (isFinite(dep) && now >= dep))) return 'DELIVERED';
+            if (isFinite(dep) && now >= dep) return 'IN TRANSIT';
+            return base;
+        }
+
+        function statusLabel(value) {
+            return I18N['st_' + value] ? t('st_' + value) : value;
+        }
+
+        function applyTranslations(lang) {
+            if (LANGS.includes(lang)) currentLang = lang;
+            document.documentElement.setAttribute('lang', currentLang);
+            document.title = t('docTitle');
+
+            Object.entries(TXT_BINDINGS).forEach(([id, key]) => setText(document.getElementById(id), t(key)));
+
+            Object.entries(PH_BINDINGS).forEach(([id, key]) => {
+                const el = document.getElementById(id);
+                if (el) el.placeholder = t(key);
+            });
+            Object.entries(PH_EXAMPLES).forEach(([id, val]) => {
+                const el = document.getElementById(id);
+                if (el) el.placeholder = t('eg') + ' ' + (I18N[val] ? t(val) : val);
+            });
+            TITLE_BINDINGS.forEach(([sel, key]) => {
+                document.querySelectorAll(sel).forEach(el => { el.title = t(key); });
+            });
+            Object.entries(OPTION_BINDINGS).forEach(([selectId, map]) => {
+                const sel = document.getElementById(selectId);
+                if (!sel) return;
+                Array.from(sel.options).forEach(opt => {
+                    if (map[opt.value]) opt.textContent = t(map[opt.value]);
+                });
+            });
+
+            setText(document.querySelector('#langModal h3'), t('langTitle'));
+            if (typeof updateChatToolbar === 'function') updateChatToolbar();
+            if (!currentActiveChatIdentifier) {
+                const nameEl = document.getElementById('activeChatClientName');
+                if (nameEl) nameEl.textContent = t('phClientNom');
+            }
+            renderVisits();
+        }
+
+        function refreshDynamicTexts() {
+            if (document.getElementById('loginOverlay').style.display !== 'none') return;
+            renderColisTable();
+            chargerMessagesClients();
+            chargerVisitesRecentes();
+            if (currentActiveChatIdentifier) refreshActiveChatSilently();
+        }
+
+        function changeLanguage(lang) {
+            lsSet('adminLang', lang);
+            applyTranslations(lang);
+            closeLangModal();
+            showToast(t('langUpdated'));
+            refreshDynamicTexts();
+        }
+
+        // ======================================================
+        //  UTILITAIRES UI
+        // ======================================================
+        function showCustomConfirm(title, message, onConfirm) {
+            const modal = document.getElementById('customConfirmModal');
+            document.getElementById('customConfirmTitle').textContent = title;
+            document.getElementById('customConfirmMessage').textContent = message;
+            modal.style.display = 'flex';
+
+            const okBtn = document.getElementById('customConfirmOkBtn');
+            const cancelBtn = document.getElementById('customConfirmCancelBtn');
+
+            const newOkBtn = okBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            newCancelBtn.textContent = t('cancel');
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            newOkBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+                if (typeof onConfirm === 'function') onConfirm();
+            });
+
+            newCancelBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.style.display = 'none';
+            }, { once: true });
+        }
+
+        function openLangModal() { document.getElementById('langModal').style.display = 'flex'; }
+        function closeLangModal() { document.getElementById('langModal').style.display = 'none'; }
+
+        function filterLanguages() {
+            const query = document.getElementById('langSearchInput').value.toLowerCase();
+            const buttons = document.getElementById('langGridContainer').getElementsByClassName('lang-btn');
+            for (let btn of buttons) {
+                btn.style.display = btn.textContent.toLowerCase().includes(query) ? 'flex' : 'none';
+            }
+        }
+
+        // Code de suivi long (8 caractères sur 32 possibles = plus de 1 000 milliards de combinaisons)
+        function genTrackingId() {
+            const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans O/0 ni I/1 pour éviter les confusions
+            let out = '';
+            try {
+                const buf = new Uint32Array(8);
+                crypto.getRandomValues(buf);
+                for (let i = 0; i < 8; i++) out += ALPHA[buf[i] % ALPHA.length];
+            } catch (e) {
+                out = '';
+                for (let i = 0; i < 8; i++) out += ALPHA[Math.floor(Math.random() * ALPHA.length)];
+            }
+            return 'TRK-' + out;
+        }
+
+        // Mode ordinateur (menu burger) : change seulement la mise en page, rien d'autre
+        let _vpOriginal = null;
+        function applyDesktopMode(on) {
+            document.body.classList.toggle('desktop-mode', !!on);
+            const vp = document.querySelector('meta[name="viewport"]');
+            if (vp) {
+                if (_vpOriginal === null) _vpOriginal = vp.getAttribute('content');
+                const small = Math.min(screen.width || 0, screen.height || 0) < 900;
+                if (on && small) vp.setAttribute('content', 'width=1280, initial-scale=' + ((screen.width || 412) / 1280).toFixed(3) + ', minimum-scale=0.2, user-scalable=yes');
+                else vp.setAttribute('content', _vpOriginal);
+            }
+            const ck = document.getElementById('menuDesktopCheck');
+            if (ck) ck.style.display = on ? 'inline-block' : 'none';
+        }
+        function toggleDesktopMode() {
+            const on = !document.body.classList.contains('desktop-mode');
+            applyDesktopMode(on);
+            lsSet('adminDesktopMode', on ? '1' : '0');
+            showToast(t(on ? 'desktopOn' : 'desktopOff'));
+            document.getElementById('hamburgerMenu').classList.remove('show');
+        }
+
+        function toggleAppTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            document.getElementById('themeIcon').className = newTheme === 'dark' ? "fa-solid fa-moon" : "fa-solid fa-sun";
+            document.getElementById('menuThemeIcon').className = newTheme === 'dark' ? "fa-solid fa-moon" : "fa-solid fa-sun";
+            lsSet('adminTheme', newTheme);
+            showToast(newTheme === 'dark' ? t('themeDark') : t('themeLight'));
+            document.getElementById('hamburgerMenu').classList.remove('show');
+        }
+
+        function togglePowerSavingMode() {
+            const isSleeping = document.body.style.filter === 'brightness(0.2)';
+            if (!isSleeping) {
+                document.body.style.filter = 'brightness(0.2)';
+                showToast(t('sleepOn'));
+                window.addEventListener('click', wakeUpApp, { once: true });
+            }
+            document.getElementById('hamburgerMenu').classList.remove('show');
+        }
+
+        function wakeUpApp() {
+            document.body.style.filter = 'none';
+            showToast(t('wake'));
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(t('fullErr', err.message));
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+            document.getElementById('hamburgerMenu').classList.remove('show');
+        }
+
+        async function purgerTousLesMessages() {
+            showCustomConfirm(
+                t('purgeTitle'),
+                t('purgeMsg'),
+                async () => {
+                    const imgsAll = await supabaseClient.from('messages').select('image_url').not('image_url', 'is', null);
+                    await nettoyerImagesChat(imgsAll.data);
+                    const { error } = await supabaseClient.from('messages').delete().neq('id', 0);
+                    if (error) {
+                        alert(t('errPurge', error.message));
+                    } else {
+                        showToast(t('purgeOk'));
+                        saveHiddenChats({});
+                        closeActiveChat();
+                        chargerMessagesClients();
+                    }
+                }
+            );
+            document.getElementById('hamburgerMenu').classList.remove('show');
+        }
+
+        function playNotificationSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } catch (e) {}
+        }
+
+        // n = numéro (1-4) d'une réponse rapide traduite, ou texte libre
+        function insertQuickReply(n) {
+            const input = document.getElementById('adminReplyInput');
+            input.value = (typeof n === 'number') ? t('qr' + n + 'm') : n;
+            input.focus();
+        }
+
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('adminPasswordInput');
+            const eyeIcon = document.getElementById('eyeIcon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.className = "fa-solid fa-eye-slash";
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.className = "fa-solid fa-eye";
+            }
+        }
+
+        // ======================================================
+        //  AUTHENTIFICATION
+        // ======================================================
+        async function checkAdminAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                document.getElementById('loginOverlay').style.display = 'none';
+            } else {
+                document.getElementById('loginOverlay').style.display = 'flex';
+            }
+        }
+
+        async function handleAdminLogin(event) {
+            event.preventDefault();
+            const userEmail = document.getElementById('adminEmailInput').value.trim();
+            const userPassword = document.getElementById('adminPasswordInput').value;
+            const btn = document.getElementById('btnLoginSubmit');
+            const icon = document.getElementById('loginBtnIcon');
+            const text = document.getElementById('loginBtnText');
+
+            btn.disabled = true;
+            icon.className = "spinner-icon";
+            text.textContent = t('loginBusy');
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: userEmail,
+                password: userPassword,
+            });
+
+            if (error) {
+                document.getElementById('loginErrorMsg').style.display = 'block';
+                document.getElementById('adminPasswordInput').value = '';
+                btn.disabled = false;
+                icon.className = "fa-solid fa-arrow-right-to-bracket";
+                text.textContent = t('loginBtn');
+            } else {
+                document.getElementById('loginErrorMsg').style.display = 'none';
+                document.getElementById('loginOverlay').style.display = 'none';
+                btn.disabled = false;
+                icon.className = "fa-solid fa-arrow-right-to-bracket";
+                text.textContent = t('loginBtn');
+                document.getElementById('adminEmailInput').value = '';
+                document.getElementById('adminPasswordInput').value = '';
+
+                renderColisTable();
+                chargerVisitesRecentes();
+                startVisitsRealtime();
+                chargerMessagesClients();
+            }
+        }
+
+        async function lockAdminSession() {
+            stopVisitsRealtime();
+            await supabaseClient.auth.signOut();
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('hamburgerMenu').classList.remove('show');
+        }
+
+        // ======================================================
+        //  INITIALISATION
+        // ======================================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            const savedTheme = lsGet('adminTheme', 'dark');
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeIcon').className = savedTheme === 'dark' ? "fa-solid fa-moon" : "fa-solid fa-sun";
+            document.getElementById('menuThemeIcon').className = savedTheme === 'dark' ? "fa-solid fa-moon" : "fa-solid fa-sun";
+
+            applyTranslations(currentLang);
+            const _savedDesk = lsGet('adminDesktopMode', '');
+            applyDesktopMode(_savedDesk ? _savedDesk === '1' : window.innerWidth >= 1100);
+            updateInstallItem();
+
+            document.getElementById('themeToggleBtn').addEventListener('click', function() {
+                toggleAppTheme();
+            });
+
+            const menuBtn = document.getElementById('menuToggleBtn');
+            const menu = document.getElementById('hamburgerMenu');
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.classList.toggle('show');
+            });
+            document.addEventListener('click', (e) => {
+                if (!menu.contains(e.target) && !menuBtn.contains(e.target)) {
+                    menu.classList.remove('show');
+                }
+            });
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                renderColisTable().then(() => {
+                    chargerMessagesClients();
+                });
+                chargerVisitesRecentes();
+                startVisitsRealtime();
+            } else {
+                document.getElementById('loginOverlay').style.display = 'flex';
+            }
+
+            setInterval(async () => {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    chargerMessagesClients();
+                    chargerVisitesRecentes();
+                    if (activeChatClientEmail) refreshActiveChatSilently();
+                }
+            }, 15000);
+
+            if (!document.getElementById('trackingId').value) {
+                document.getElementById('trackingId').value = genTrackingId();
+            }
+        });
+
+        // ======================================================
+        //  MESSAGERIE
+        // ======================================================
+        function toggleMessagingView() {
+            const mainView = document.getElementById('mainDashboardView');
+            const msgView = document.getElementById('messagingSection');
+            if (msgView.style.display === 'block') {
+                msgView.style.display = 'none';
+                mainView.style.display = 'block';
+            } else {
+                mainView.style.display = 'none';
+                msgView.style.display = 'block';
+                renderColisTable().then(() => {
+                    chargerMessagesClients();
+                });
+            }
+        }
+
+        const isImagePlaceholder = (m) => !m || /^\s*\[(image|photo)[^\]]*\]\s*$/i.test(m);
+        const fmtTime = (iso) => new Date(iso).toLocaleTimeString(LOCALES[currentLang], { hour: '2-digit', minute: '2-digit' });
+
+        async function chargerMessagesClients() {
+            try {
+                if (Object.keys(allColisCache).length === 0) {
+                    const { data: colisData } = await supabaseClient.from('colis').select('*');
+                    if (colisData) {
+                        colisData.forEach(row => allColisCache[row.trackingId] = row.data);
+                    }
+                }
+
+                let registeredEmails = new Set();
+                let registeredNames = new Set();
+                Object.values(allColisCache).forEach(colis => {
+                    if (colis.clientEmail) registeredEmails.add(colis.clientEmail.trim().toLowerCase());
+                    if (colis.clientNom) registeredNames.add(colis.clientNom.trim().toLowerCase());
+                });
+                Object.keys(allColisCache).forEach(code => registeredEmails.add((code + '@client.vanguard').toLowerCase()));
+
+                const { data, error } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: false });
+                const container = document.getElementById('chatListContainer');
+                const badge = document.getElementById('globalMsgBadge');
+
+                const keptChats = getKeptChats();
+                if (error || ((!data || data.length === 0) && Object.keys(keptChats).length === 0)) {
+                    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;">' + escapeHtml(t('noMsg')) + '</div>';
+                    badge.style.display = 'none';
+                    return;
+                }
+
+                let clientsMap = {};
+                (data || []).forEach(msg => {
+                    const identifier = msg.client_email || msg.client_name || 'Inconnu';
+                    if (!clientsMap[identifier]) {
+                        clientsMap[identifier] = {
+                            name: msg.client_name || msg.client_email || t('anonVisitor'),
+                            email: msg.client_email,
+                            source: msg.source_page || (msg.tracking_number ? 'suivi' : 'accueil'),
+                            tracking: msg.tracking_number || (String(identifier).endsWith('@client.vanguard') ? String(identifier).slice(0, -'@client.vanguard'.length) : null),
+                            messages: [],
+                            unread: 0
+                        };
+                    }
+                    clientsMap[identifier].messages.push(msg);
+                    if (!msg.is_read && msg.sender === 'client') clientsMap[identifier].unread++;
+                });
+
+                // Contacts dont on a seulement vidé l'historique : ils restent dans la liste
+                Object.keys(keptChats).forEach(id => {
+                    if (clientsMap[id]) { delete keptChats[id]; return; }
+                    const k = keptChats[id] || {};
+                    clientsMap[id] = { name: k.name || id, email: k.email || null, source: 'accueil', tracking: k.tracking || null, messages: [], unread: 0 };
+                });
+                saveKeptChats(keptChats);
+                window._chatInfoById = clientsMap;
+
+                // Conversations masquées : elles réapparaissent si le client écrit à nouveau
+                const hiddenMap = getHiddenChats();
+                Object.keys(hiddenMap).forEach(id => {
+                    const info = clientsMap[id];
+                    if (!info) { delete hiddenMap[id]; return; }
+                    const newest = info.messages.find(m => m.sender === 'client');
+                    if (newest && new Date(newest.created_at).getTime() > new Date(hiddenMap[id]).getTime()) delete hiddenMap[id];
+                });
+                saveHiddenChats(hiddenMap);
+                lastHiddenCount = Object.keys(hiddenMap).length;
+
+                let totalUnread = Object.entries(clientsMap).reduce((acc, [id, curr]) => acc + (hiddenMap[id] ? 0 : curr.unread), 0);
+
+                if (totalUnread > lastKnownTotalUnread && lastKnownTotalUnread !== 0) {
+                    playNotificationSound();
+                }
+                lastKnownTotalUnread = totalUnread;
+
+                if (totalUnread > 0) {
+                    badge.textContent = totalUnread;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+
+                let htmlContent = '';
+                for (let [identifier, info] of Object.entries(clientsMap)) {
+                    if (!!hiddenMap[identifier] !== chatShowHidden) continue;
+                    let lastMsg = info.messages[0] || null;
+                    let timeStr = lastMsg ? fmtTime(lastMsg.created_at) : '';
+                    // Client Fret : il écrit depuis le suivi avec un code qui existe encore (preuve solide)
+                    // Client reconnu : il écrit depuis l'accueil avec une adresse enregistrée sur un colis (à vérifier)
+                    const emLow = String(info.email || '').toLowerCase();
+                    const viaCode = emLow.endsWith('@client.vanguard') && registeredEmails.has(emLow);
+                    const viaEmail = !viaCode && !!emLow && !emLow.endsWith('@client.vanguard') && registeredEmails.has(emLow);
+                    let badgeClass = viaCode ? 'badge-client' : (viaEmail ? 'badge-known' : 'badge-visiteur');
+                    let badgeText = viaCode
+                        ? '<i class="fa-solid fa-box-open"></i> ' + escapeHtml(t('clientFret'))
+                        : (viaEmail
+                            ? '<i class="fa-solid fa-user-check"></i> ' + escapeHtml(t('clientKnown'))
+                            : '<i class="fa-solid fa-compass"></i> ' + escapeHtml(t('visitor')));
+                    let preview = !lastMsg ? t('noMsgYet') : (lastMsg.image_url
+                        ? '📷 ' + (isImagePlaceholder(lastMsg.message) ? t('photo') : lastMsg.message)
+                        : (lastMsg.message || ''));
+
+                    htmlContent += `
+                        <div class="chat-item" data-id="${escapeHtml(identifier)}" onclick="chatItemClick(this.dataset.id)">
+                            <div class="chat-item-left">
+                                ${chatSelectMode ? `<input type="checkbox" class="vf-sel" ${selectedChats.has(identifier) ? 'checked' : ''} style="width: 20px; height: 20px; flex: 0 0 auto; pointer-events: none;">` : ''}
+                                <div class="chat-avatar">${escapeHtml(info.name.charAt(0).toUpperCase())}</div>
+                                <div class="chat-info-col">
+                                    <div class="chat-line-top">
+                                        <span class="chat-contact-name">${escapeHtml(info.name)}</span>
+                                        <span style="font-size: 0.75rem; color: var(--text-muted);">${timeStr}</span>
+                                    </div>
+                                    <div class="chat-preview-text">${escapeHtml(preview)}</div>
+                                    <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
+                                        <span class="user-type-badge ${badgeClass}">${badgeText}</span>
+                                        ${info.tracking ? `<span style="font-size: 0.7rem; color: var(--primary); font-weight: 600;"><i class="fa-solid fa-barcode"></i> ${escapeHtml(info.tracking)}</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            ${info.unread > 0 ? `<span style="background: #25d366; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; flex-shrink: 0;">${info.unread}</span>` : ''}
+                        </div>
+                    `;
+                }
+                container.innerHTML = htmlContent || ('<div style="text-align: center; color: var(--text-muted); padding: 40px;">' + escapeHtml(t(chatShowHidden ? 'noHidden' : 'noMsg')) + '</div>');
+                updateChatToolbar();
+            } catch (err) {
+                console.error("Erreur chargement messages :", err);
+            }
+        }
+
+        // ---- Masquer / sélectionner / supprimer des conversations ----
+        let chatSelectMode = false, chatShowHidden = false, lastHiddenCount = 0;
+        const selectedChats = new Set();
+
+        function getHiddenChats() { try { return JSON.parse(lsGet('adminHiddenChats', '{}')) || {}; } catch (e) { return {}; } }
+        function saveHiddenChats(o) { lsSet('adminHiddenChats', JSON.stringify(o)); }
+
+        function updateChatToolbar() {
+            const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+            const n = selectedChats.size;
+            set('selModeTxt', chatSelectMode ? t('selCancel') : t('selMode'));
+            set('showHiddenTxt', chatShowHidden ? t('backToList') : (t('hiddenTitle') + (lastHiddenCount > 0 ? ' (' + lastHiddenCount + ')' : '')));
+            set('selHideTxt', (chatShowHidden ? t('selUnhide') : t('selHide')) + ' (' + n + ')');
+            set('selDelTxt', t('selDelete') + ' (' + n + ')');
+            const bar = document.getElementById('selActionBar');
+            if (bar) bar.style.display = chatSelectMode ? 'flex' : 'none';
+            const b1 = document.getElementById('btnSelMode'); if (b1) b1.classList.toggle('on', chatSelectMode);
+            const b2 = document.getElementById('btnShowHidden'); if (b2) b2.classList.toggle('on', chatShowHidden);
+        }
+
+        function toggleSelectMode() {
+            chatSelectMode = !chatSelectMode;
+            selectedChats.clear();
+            updateChatToolbar();
+            chargerMessagesClients();
+        }
+
+        function toggleShowHidden() {
+            chatShowHidden = !chatShowHidden;
+            selectedChats.clear();
+            updateChatToolbar();
+            chargerMessagesClients();
+        }
+
+        function chatItemClick(id) {
+            if (!chatSelectMode) { openChat(id); return; }
+            if (selectedChats.has(id)) selectedChats.delete(id); else selectedChats.add(id);
+            document.querySelectorAll('#chatListContainer .chat-item').forEach(el => {
+                const cb = el.querySelector('input.vf-sel');
+                if (cb) cb.checked = selectedChats.has(el.dataset.id);
+            });
+            updateChatToolbar();
+        }
+
+        function hideCurrentChat() {
+            if (!currentActiveChatIdentifier) return;
+            const map = getHiddenChats();
+            map[currentActiveChatIdentifier] = new Date().toISOString();
+            saveHiddenChats(map);
+            showToast(t('hiddenToast'));
+            closeActiveChat();
+        }
+
+        function hideSelectedChats() {
+            if (selectedChats.size === 0) { showToast(t('selNone')); return; }
+            const map = getHiddenChats();
+            const now = new Date().toISOString();
+            selectedChats.forEach(id => { if (chatShowHidden) delete map[id]; else map[id] = now; });
+            saveHiddenChats(map);
+            showToast(t(chatShowHidden ? 'shownToast' : 'hiddenToast'));
+            selectedChats.clear();
+            chatSelectMode = false;
+            updateChatToolbar();
+            chargerMessagesClients();
+        }
+
+        function deleteSelectedChats() {
+            if (selectedChats.size === 0) { showToast(t('selNone')); return; }
+            const ids = Array.from(selectedChats);
+            showCustomConfirm(t('delSelTitle'), t('delSelMsg', ids.length), async () => {
+                const map = getHiddenChats();
+                for (const id of ids) {
+                    try {
+                        const a = await supabaseClient.from('messages').select('image_url').not('image_url', 'is', null).eq('client_email', id);
+                        const b = await supabaseClient.from('messages').select('image_url').not('image_url', 'is', null).is('client_email', null).eq('client_name', id);
+                        await nettoyerImagesChat([].concat(a.data || [], b.data || []));
+                        await supabaseClient.from('messages').delete().eq('client_email', id);
+                        await supabaseClient.from('messages').delete().is('client_email', null).eq('client_name', id);
+                        delete map[id];
+                        const kp = getKeptChats(); delete kp[id]; saveKeptChats(kp);
+                    } catch (e) { console.warn('Suppression conversation :', e); }
+                }
+                saveHiddenChats(map);
+                selectedChats.clear();
+                chatSelectMode = false;
+                showToast(t('selDeleted'));
+                updateChatToolbar();
+                chargerMessagesClients();
+            });
+        }
+
+        // Discussion en plein écran : suit la taille visible de l'écran (clavier inclus)
+        (function () {
+            const box = document.getElementById('activeChatBox');
+            if (!box) return;
+            const vv = window.visualViewport;
+            function sync() {
+                const root = document.documentElement.style;
+                root.setProperty('--vvh', (vv ? vv.height : window.innerHeight) + 'px');
+                root.setProperty('--vvt', (vv ? vv.offsetTop : 0) + 'px');
+            }
+            function onClassChange() {
+                const on = box.classList.contains('active');
+                document.documentElement.classList.toggle('chat-open', on);
+                if (on) {
+                    sync();
+                    const area = document.getElementById('chatMessagesArea');
+                    setTimeout(function () { if (area) area.scrollTop = area.scrollHeight; }, 60);
+                }
+            }
+            new MutationObserver(onClassChange).observe(box, { attributes: true, attributeFilter: ['class'] });
+            if (vv) { vv.addEventListener('resize', sync); vv.addEventListener('scroll', sync); }
+            window.addEventListener('resize', sync);
+            sync();
+        })();
+
+        async function openChat(identifier, displayName) {
+            currentActiveChatIdentifier = identifier;
+            activeChatClientEmail = identifier;
+            document.getElementById('chatMessagesArea').innerHTML = '';
+            document.getElementById('activeChatClientName').textContent = displayName || ((window._chatInfoById || {})[identifier] || {}).name || identifier;
+            document.getElementById('activeChatBox').classList.add('active');
+
+            await supabaseClient.from('messages').update({ is_read: true }).eq('client_email', identifier).eq('sender', 'client');
+            await supabaseClient.from('messages').update({ is_read: true }).eq('client_name', identifier).eq('sender', 'client');
+
+            refreshActiveChatSilently();
+            chargerMessagesClients();
+        }
+
+        async function refreshActiveChatSilently() {
+            if (!currentActiveChatIdentifier) return;
+            const { data, error } = await supabaseClient.from('messages').select('*').or(`client_email.eq."${currentActiveChatIdentifier}",client_name.eq."${currentActiveChatIdentifier}"`).order('created_at', { ascending: true });
+
+            const area = document.getElementById('chatMessagesArea');
+            if (error || !data || data.length === 0) return;
+
+            document.getElementById('activeChatClientName').textContent = data[0].client_name || data[0].client_email || t('clientWord');
+
+            let html = '';
+            data.forEach(msg => {
+                const bubbleClass = msg.sender === 'admin' ? 'admin' : 'client';
+                const time = fmtTime(msg.created_at);
+                const hasImg = !!msg.image_url;
+                const text = (hasImg && isImagePlaceholder(msg.message)) ? '' : (msg.message || '');
+
+                html += '<div class="chat-bubble ' + bubbleClass + '">'
+                    + (text ? '<span class="bubble-text">' + escapeHtml(text) + '</span>' : '')
+                    + (hasImg ? '<img src="' + escapeHtml(msg.image_url) + '" alt="" onclick="openImageModal(this.src)">' : '')
+                    + '<span class="bubble-time">' + time + (msg.sender === 'admin' ? '<i class="fa-solid fa-check-double bubble-ticks' + (msg.is_read ? ' read' : '') + '"></i>' : '') + '</span>'
+                    + '</div>';
+            });
+            const nearBottom = (area.scrollHeight - area.scrollTop - area.clientHeight) < 120 || area.innerHTML === '';
+            area.innerHTML = html;
+            if (nearBottom) area.scrollTop = area.scrollHeight;
+        }
+
+        function closeActiveChat() {
+            document.getElementById('activeChatBox').classList.remove('active');
+            currentActiveChatIdentifier = null;
+            activeChatClientEmail = null;
+            chargerMessagesClients();
+        }
+
+        async function sendAdminReply() {
+            const input = document.getElementById('adminReplyInput');
+            const text = input.value.trim();
+            if (!text || !currentActiveChatIdentifier) return;
+
+            input.value = '';
+            const { error } = await supabaseClient.from('messages').insert([{
+                client_email: currentActiveChatIdentifier,
+                client_name: document.getElementById('activeChatClientName').textContent,
+                sender: 'admin',
+                message: text,
+                is_read: false
+            }]);
+
+            if (error) {
+                alert(t('errSend', error.message));
+            } else {
+                await refreshActiveChatSilently();
+                const area = document.getElementById('chatMessagesArea');
+                area.scrollTop = area.scrollHeight;
+            }
+        }
+
+        async function sendImageReply(inputElement) {
+            const file = inputElement.files[0];
+            if (!file || !currentActiveChatIdentifier) return;
+
+            showToast(t('imgSending'));
+            const fileName = `admin_upload_${Date.now()}_${file.name}`;
+            const { data: uploadData, error: uploadError } = await supabaseClient.storage.from('chat-images').upload(fileName, file);
+
+            if (uploadError) {
+                alert(t('errImg', uploadError.message));
+                return;
+            }
+
+            const { data: { publicUrl } } = supabaseClient.storage.from('chat-images').getPublicUrl(fileName);
+
+            await supabaseClient.from('messages').insert([{
+                client_email: currentActiveChatIdentifier,
+                client_name: document.getElementById('activeChatClientName').textContent,
+                sender: 'admin',
+                message: '[Image envoyée]',
+                image_url: publicUrl,
+                is_read: false
+            }]);
+
+            inputElement.value = '';
+            await refreshActiveChatSilently();
+            const area = document.getElementById('chatMessagesArea');
+            area.scrollTop = area.scrollHeight;
+        }
+
+        // Supprime du stockage les photos liées à des messages (évite de remplir le Storage)
+        async function nettoyerImagesChat(rows) {
+            try {
+                const paths = (rows || []).map(r => r && r.image_url).filter(Boolean).map(u => {
+                    const i = u.indexOf('/chat-images/');
+                    return i < 0 ? null : decodeURIComponent(u.slice(i + 13).split('?')[0]);
+                }).filter(Boolean);
+                if (paths.length) await supabaseClient.storage.from('chat-images').remove(paths);
+            } catch (e) { console.warn('Nettoyage images :', e); }
+        }
+
+        // Contacts conservés quand on vide seulement l'historique (stockés sur cet appareil, aucune nouvelle table)
+        function getKeptChats() { try { return JSON.parse(lsGet('adminKeptChats', '{}')) || {}; } catch (e) { return {}; } }
+        function saveKeptChats(o) { lsSet('adminKeptChats', JSON.stringify(o)); }
+
+        async function viderHistoriqueConversation() {
+            if (!currentActiveChatIdentifier) return;
+            const id = currentActiveChatIdentifier;
+            const info = (window._chatInfoById || {})[id] || {};
+            const name = document.getElementById('activeChatClientName').textContent || info.name || id;
+            showCustomConfirm(t('clearHistTitle'), t('clearHistMsg'), async () => {
+                const flt = `client_email.eq."${id}",client_name.eq."${id}"`;
+                const imgs = await supabaseClient.from('messages').select('image_url').not('image_url', 'is', null).or(flt);
+                await nettoyerImagesChat(imgs.data);
+                const { error } = await supabaseClient.from('messages').delete().or(flt);
+                if (error) { alert(error.message); return; }
+                const kept = getKeptChats();
+                kept[id] = { name: name, email: info.email || (id.indexOf('@') > -1 ? id : null), tracking: info.tracking || null };
+                saveKeptChats(kept);
+                closeActiveChat();
+                showToast(t('histCleared'));
+            });
+        }
+
+        async function supprimerConversationActuelle() {
+            if (!currentActiveChatIdentifier) return;
+            showCustomConfirm(
+                t('delClientTitle'),
+                t('delClientMsg'),
+                async () => {
+                    const imgs = await supabaseClient.from('messages').select('image_url').not('image_url', 'is', null).or(`client_email.eq."${currentActiveChatIdentifier}",client_name.eq."${currentActiveChatIdentifier}"`);
+                    await nettoyerImagesChat(imgs.data);
+                    await supabaseClient.from('messages').delete().or(`client_email.eq."${currentActiveChatIdentifier}",client_name.eq."${currentActiveChatIdentifier}"`);
+                    const kept = getKeptChats(); delete kept[currentActiveChatIdentifier]; saveKeptChats(kept);
+                    const hid = getHiddenChats(); delete hid[currentActiveChatIdentifier]; saveHiddenChats(hid);
+                    closeActiveChat();
+                    showToast(t('clientDeleted'));
+                }
+            );
+        }
+
+        // ======================================================
+        //  VISITEURS DU SITE (compteur corrigé)
+        // ======================================================
+        let visitsState = { loading: true, count: 0, last: null, error: false };
+
+        function renderVisits() {
+            const c = document.getElementById('totalVisitesCount');
+            const l = document.getElementById('dernierVisiteurText');
+            if (!c || !l) return;
+            c.textContent = Number(visitsState.count || 0).toLocaleString(LOCALES[currentLang]);
+            if (visitsState.loading) {
+                l.textContent = t('visitLoading');
+            } else if (visitsState.error) {
+                l.textContent = t('visitErr');
+            } else if (visitsState.last) {
+                const v = visitsState.last;
+                const place = v.pays || v.country || t('unknown');
+                const dateStr = v.created_at ? new Date(v.created_at).toLocaleString(LOCALES[currentLang]) : '';
+                l.textContent = dateStr ? t('visitLast', place, dateStr) : place;
+            } else {
+                l.textContent = t('visitNone');
+            }
+        }
+
+        async function chargerVisitesRecentes() {
+            try {
+                let total = null;
+                let last = null;
+                let anyError = false;
+
+                // 1) Comptage exact (sans lire les lignes)
+                const r1 = await supabaseClient.from('visites').select('*', { count: 'exact', head: true });
+                if (!r1.error && typeof r1.count === 'number') total = r1.count;
+                else if (r1.error) { anyError = true; console.warn('visites count :', r1.error.message); }
+
+                // 2) Dernière visite (tri par date, sinon sans tri)
+                const r2 = await supabaseClient.from('visites').select('*').order('created_at', { ascending: false }).limit(1);
+                if (!r2.error && r2.data) {
+                    last = r2.data[0] || null;
+                } else {
+                    const r3 = await supabaseClient.from('visites').select('*').limit(1);
+                    if (!r3.error && r3.data) last = r3.data[0] || null;
+                    else { anyError = true; console.warn('visites last :', (r3.error || r2.error || {}).message); }
+                }
+
+                // 3) Secours : si le comptage est indisponible ou incohérent, on compte les lignes lues
+                if (total === null || (total === 0 && last)) {
+                    const r4 = await supabaseClient.from('visites').select('*').limit(1000);
+                    if (!r4.error && r4.data) total = Math.max(total || 0, r4.data.length);
+                }
+
+                if (total === 0 && !last && !anyError) {
+                    console.info('visites : 0 ligne lisible. Si des visites existent, vérifiez que la lecture de la table est autorisée pour l\'admin connecté.');
+                }
+
+                visitsState = { loading: false, count: total || 0, last: last, error: (total === null && !last) };
+            } catch (e) {
+                console.error("Erreur visites :", e);
+                visitsState = { loading: false, count: visitsState.count || 0, last: visitsState.last, error: true };
+            }
+            renderVisits();
+        }
+
+        function startVisitsRealtime() {
+            if (visitsChannel) return;
+            try {
+                visitsChannel = supabaseClient
+                    .channel('visites-live')
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visites' }, () => chargerVisitesRecentes())
+                    .subscribe();
+            } catch (e) { console.warn('Realtime visites indisponible :', e); }
+        }
+
+        function stopVisitsRealtime() {
+            try { if (visitsChannel) supabaseClient.removeChannel(visitsChannel); } catch (e) {}
+            visitsChannel = null;
+        }
+
+        // ======================================================
+        //  COLIS
+        // ======================================================
+        async function renderColisTable() {
+            try {
+                const { data, error } = await supabaseClient.from('colis').select('*').order('created_at', { ascending: false });
+                const tbody = document.getElementById('colisTableBody');
+                allColisCache = {};
+
+                if (error || !data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">' + escapeHtml(t('noColis')) + '</td></tr>';
+                    document.getElementById('colisCountBadge').textContent = '0';
+                    return;
+                }
+
+                document.getElementById('colisCountBadge').textContent = data.length;
+                let html = '';
+                data.forEach(row => {
+                    allColisCache[row.trackingId] = row.data;
+                    let d = row.data;
+                    html += `
+                        <tr>
+                            <td><strong>${escapeHtml(row.trackingId)}</strong></td>
+                            <td>${escapeHtml(d.clientNom || 'N/A')}<br><small style="color:var(--text-muted);">${escapeHtml(d.clientVille || '')}, ${escapeHtml(d.clientPays || '')}</small></td>
+                            <td>${escapeHtml(d.colisNom || 'N/A')}</td>
+                            <td><span class="status-badge status-enregistre">${escapeHtml(statusLabel(effStatutGlobal(d)))}</span></td>
+                            <td class="actions-cell">
+                                <div class="actions-container">
+                                    <button type="button" class="btn-action btn-view" onclick="loadColisForEdit('${row.trackingId}')" title="${escapeHtml(t('tipEdit'))}"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button type="button" class="btn-action btn-eye" onclick="window.open('suivi.html?tracking=${row.trackingId}', '_blank')" title="${escapeHtml(t('tipView'))}"><i class="fa-solid fa-eye"></i></button>
+                                    <button type="button" class="btn-action btn-msg-action" data-code="${escapeHtml(row.trackingId)}" data-name="${escapeHtml(d.clientNom || '')}" onclick="openChatFromColis(this.dataset.code, this.dataset.name)" title="${escapeHtml(t('tipChat'))}"><i class="fa-solid fa-comments"></i></button>
+                                    <button type="button" class="btn-action btn-del" onclick="deleteColis('${row.trackingId}')" title="${escapeHtml(t('tipDelColis'))}"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            } catch (err) {
+                console.error("Erreur rendu table colis :", err);
+            }
+        }
+
+        function openChatFromColis(code, name) {
+            toggleMessagingView();
+            // Une conversation = un numéro de suivi (même identifiant que côté suivi.html)
+            openChat(code + '@client.vanguard', name || code);
+        }
+
+        function filterTable() {
+            let input = document.getElementById('searchInput').value.toLowerCase();
+            let tbody = document.getElementById('colisTableBody');
+            let trs = tbody.getElementsByTagName('tr');
+            for (let tr of trs) {
+                let text = tr.textContent.toLowerCase();
+                tr.style.display = text.includes(input) ? '' : 'none';
+            }
+        }
+
+        function loadColisForEdit(trackingId) {
+            let d = allColisCache[trackingId];
+            if (!d) return;
+
+            document.getElementById('trackingId').value = trackingId;
+            document.getElementById('colisNom').value = d.colisNom || '';
+            document.getElementById('statutGlobal').value = d.statutGlobal || 'REGISTERED';
+            document.getElementById('positionCamion').value = d.positionCamion || 'auto';
+            document.getElementById('etatMouvement').value = d.etatMouvement || 'normal';
+            document.getElementById('positionActuelle').value = d.positionActuelle || 'Package registered';
+            document.getElementById('dateDepart').value = d.dateDepart || '';
+            document.getElementById('dateArrivee').value = d.dateArrivee || '';
+
+            document.getElementById('expediteurNom').value = d.expediteurNom || '';
+            document.getElementById('expediteurTel').value = d.expediteurTel || '';
+            document.getElementById('expediteurEmail').value = d.expediteurEmail || '';
+            document.getElementById('expediteurPays').value = d.expediteurPays || '';
+            document.getElementById('expediteurVille').value = d.expediteurVille || '';
+            document.getElementById('expediteurCp').value = d.expediteurCp || '';
+            document.getElementById('expediteurRue').value = d.expediteurRue || '';
+            document.getElementById('startLat').value = d.startLat || '';
+            document.getElementById('startLon').value = d.startLon || '';
+
+            document.getElementById('clientNom').value = d.clientNom || '';
+            document.getElementById('clientTel').value = d.clientTel || '';
+            document.getElementById('clientEmail').value = d.clientEmail || '';
+            document.getElementById('clientPays').value = d.clientPays || '';
+            document.getElementById('clientVille').value = d.clientVille || '';
+            document.getElementById('clientCp').value = d.clientCp || '';
+            document.getElementById('clientRue').value = d.clientRue || '';
+            document.getElementById('endLat').value = d.endLat || '';
+            document.getElementById('endLon').value = d.endLon || '';
+
+            window.scrollTo({ top: document.getElementById('adminForm').offsetTop - 20, behavior: 'smooth' });
+            showToast(t('formLoaded'));
+        }
+
+        async function saveColis(event) {
+            event.preventDefault();
+            const trackingId = document.getElementById('trackingId').value.trim();
+            const formData = {
+                colisNom: document.getElementById('colisNom').value.trim(),
+                statutGlobal: document.getElementById('statutGlobal').value,
+                positionCamion: document.getElementById('positionCamion').value,
+                etatMouvement: document.getElementById('etatMouvement').value,
+                positionActuelle: document.getElementById('positionActuelle').value,
+                dateDepart: document.getElementById('dateDepart').value,
+                dateArrivee: document.getElementById('dateArrivee').value,
+
+                expediteurNom: document.getElementById('expediteurNom').value.trim(),
+                expediteurTel: document.getElementById('expediteurTel').value.trim(),
+                expediteurEmail: document.getElementById('expediteurEmail').value.trim(),
+                expediteurPays: document.getElementById('expediteurPays').value.trim(),
+                expediteurVille: document.getElementById('expediteurVille').value.trim(),
+                expediteurCp: document.getElementById('expediteurCp').value.trim(),
+                expediteurRue: document.getElementById('expediteurRue').value.trim(),
+                startLat: document.getElementById('startLat').value.trim(),
+                startLon: document.getElementById('startLon').value.trim(),
+
+                clientNom: document.getElementById('clientNom').value.trim(),
+                clientTel: document.getElementById('clientTel').value.trim(),
+                clientEmail: document.getElementById('clientEmail').value.trim(),
+                clientPays: document.getElementById('clientPays').value.trim(),
+                clientVille: document.getElementById('clientVille').value.trim(),
+                clientCp: document.getElementById('clientCp').value.trim(),
+                clientRue: document.getElementById('clientRue').value.trim(),
+                endLat: document.getElementById('endLat').value.trim(),
+                endLon: document.getElementById('endLon').value.trim()
+            };
+
+            const btn = document.getElementById('btnSaveSubmit');
+            const icon = document.getElementById('saveBtnIcon');
+            const txt = document.getElementById('btnSaveText');
+            btn.disabled = true;
+            icon.className = "spinner-icon";
+            txt.textContent = t('saving');
+
+            const { error } = await supabaseClient.from('colis').upsert({
+                trackingId: trackingId,
+                data: formData
+            }, { onConflict: 'trackingId' });
+
+            btn.disabled = false;
+            icon.className = "fa-solid fa-floppy-disk";
+            txt.textContent = t('btnSave');
+
+            if (error) {
+                alert(t('errSave', error.message));
+            } else {
+                showToast(t('saveOk'));
+                renderColisTable();
+                resetForm(true);
+                requestAnimationFrame(() => {
+                    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
+                });
+            }
+        }
+
+        async function deleteColis(trackingId) {
+            showCustomConfirm(
+                t('delColisTitle'),
+                t('delColisMsg', trackingId),
+                async () => {
+                    const { error } = await supabaseClient.from('colis').delete().eq('trackingId', trackingId);
+                    if (error) {
+                        alert(t('errDelete', error.message));
+                    } else {
+                        // Nettoyage : conversation du colis + photos associées
+                        const chatId = trackingId + '@client.vanguard';
+                        const imgsC = await supabaseClient.from('messages').select('image_url').not('image_url', 'is', null).eq('client_email', chatId);
+                        await nettoyerImagesChat(imgsC.data);
+                        await supabaseClient.from('messages').delete().eq('client_email', chatId);
+                        showToast(t('colisDeleted'));
+                        renderColisTable();
+                    }
+                }
+            );
+        }
+
+        function resetForm(silent) {
+            document.getElementById('adminForm').reset();
+            document.getElementById('trackingId').value = genTrackingId();
+            if (silent !== true) showToast(t('formReset'));
+        }
+
+        // BUG 1 : bouton "Nouveau colis" -> reset + scroll fluide vers le formulaire + focus sur "Nom du colis"
+        function newColis() {
+            const mainView = document.getElementById('mainDashboardView');
+            const msgView = document.getElementById('messagingSection');
+            if (msgView.style.display === 'block') {
+                msgView.style.display = 'none';
+                mainView.style.display = 'block';
+            }
+            resetForm(true);
+
+            const form = document.getElementById('adminForm');
+            const input = document.getElementById('colisNom');
+            requestAnimationFrame(() => {
+                const top = form.getBoundingClientRect().top + window.pageYOffset - 12;
+                window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+                setTimeout(() => {
+                    try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
+                }, 450);
+            });
+            showToast(t('formNew'));
+        }
+
+        function copyInputTrackingCode() {
+            const input = document.getElementById('trackingId');
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            showToast(t('trkCopied'));
+        }
+
+        function openImageModal(url) {
+            document.getElementById('modalImageContent').src = url;
+            document.getElementById('modalDownloadBtn').href = url;
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        function showToast(message, duration) {
+            let existingToast = document.getElementById('toastNotification');
+            if (existingToast) existingToast.remove();
+
+            let toast = document.createElement('div');
+            toast.id = 'toastNotification';
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+                width: max-content; max-width: 90vw; text-align: center; box-sizing: border-box;
+                background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);
+                padding: 10px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+                z-index: 40000; font-size: 0.9rem; font-weight: 600; animation: fadeInOverlay 0.2s ease forwards;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 200);
+            }, duration || 3000);
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

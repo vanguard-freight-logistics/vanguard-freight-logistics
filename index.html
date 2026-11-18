@@ -1,0 +1,3311 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="t-title">Vanguard Freight & Logistics | Transport International & Fret Express</title>
+    
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* --- RESET AND BASE STYLES --- */
+        html {
+            scroll-behavior: smooth;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root[data-theme="light"] {
+            --brand-blue: #0f172a;
+            --brand-blue-light: #1e293b;
+            --brand-accent: #991b1b;
+            --bg-light: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        :root[data-theme="dark"] {
+            --brand-blue: #020617;
+            --brand-blue-light: #0f172a;
+            --brand-accent: #b91c1c;
+            --bg-light: #060913;
+            --card-bg: #0d1321;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        /* --- MAIN NAVIGATION --- */
+        nav {
+            background: var(--card-bg);
+            padding: 16px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+
+        .brand-logo-icon {
+            background: var(--brand-blue);
+            color: #ffffff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .brand-logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-logo-text .title {
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+            line-height: 1;
+        }
+
+        .brand-logo-text .subtitle {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .nav-menu a:hover {
+            color: var(--brand-accent);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .burger-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .burger-btn:active {
+            transform: scale(0.90);
+        }
+
+        /* --- FLUID LANGUAGE SELECTOR STYLES --- */
+        .lang-selector-btn {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .lang-selector-btn:active {
+            transform: scale(0.96);
+        }
+        .lang-selector-btn:hover {
+            background-color: var(--border-color);
+        }
+
+        .lang-modal {
+            display: flex;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+        .lang-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .lang-modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 420px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lang-modal.active .lang-modal-content {
+            transform: scale(1);
+        }
+        .lang-modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+        }
+        .lang-modal-header button {
+            background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted);
+        }
+        .lang-search-box {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-light);
+        }
+        .lang-search-box input {
+            width: 100%;
+            padding: 10px 14px 10px 38px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text-main);
+            outline: none;
+            font-size: 0.9rem;
+            position: relative;
+        }
+        .lang-search-wrapper {
+            position: relative;
+        }
+        .lang-search-wrapper i {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);
+        }
+        .lang-list {
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .lang-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+            background: transparent;
+            border: none;
+            width: 100%;
+            text-align: left;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .lang-item:hover {
+            background-color: var(--border-color);
+            color: var(--brand-accent);
+        }
+        .lang-flag {
+            font-size: 1.2rem;
+        }
+
+        /* --- HERO SECTION --- */
+        .hero-section {
+            background: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)), 
+                        url('https://images.unsplash.com/photo-1578575437130-527eed3abbec?q=80&w=1600&auto=format&fit=crop') center/cover no-repeat;
+            color: #ffffff;
+            padding: 60px 5% 90px 5%;
+        }
+
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .hero-title {
+            font-size: 2.8rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 15px;
+            max-width: 750px;
+            letter-spacing: -1px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: #cbd5e1;
+            max-width: 600px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        /* --- SEARCH / TRACKING MODULE --- */
+        .search-module {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            max-width: 1000px;
+            margin: -50px auto 0 auto;
+            border: 1px solid var(--border-color);
+            position: relative;
+            z-index: 10;
+        }
+
+        .module-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            background-color: rgba(0,0,0,0.02);
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+        }
+
+        .tab-btn {
+            padding: 16px 24px;
+            background: transparent;
+            border: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid transparent;
+            transition: transform 0.1s ease, color 0.2s ease;
+        }
+
+        .tab-btn:active {
+            transform: scale(0.98);
+        }
+
+        .tab-btn.active {
+            color: var(--brand-accent);
+            border-bottom-color: var(--brand-accent);
+            background: var(--card-bg);
+        }
+
+        .module-body {
+            padding: 28px;
+        }
+
+        .search-form-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            min-width: 280px;
+            position: relative;
+        }
+
+        .search-input-wrapper i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .search-input-wrapper input {
+            width: 100%;
+            padding: 14px 16px 14px 45px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            outline: none;
+            background: var(--card-bg);
+            color: var(--text-main);
+        }
+
+        .search-input-wrapper input:focus {
+            border-color: var(--brand-accent);
+        }
+
+        .btn-submit-search {
+            background-color: var(--brand-accent);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.1s ease, opacity 0.2s ease;
+        }
+
+        .btn-submit-search:active {
+            transform: scale(0.96);
+        }
+
+        .btn-submit-search:hover {
+            opacity: 0.9;
+        }
+
+        #index-error-message {
+            display: none;
+            margin-top: 14px;
+            padding: 12px 16px;
+            background: rgba(153, 27, 27, 0.1);
+            border: 1px solid rgba(153, 27, 27, 0.3);
+            color: var(--brand-accent);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            align-items: center;
+            gap: 8px;
+        }
+        #index-error-message i { font-size: 1rem; }
+
+        /* --- STATISTICS --- */
+        .stats-container {
+            max-width: 1000px;
+            margin: 25px auto 0 auto;
+            padding: 0 5%;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item-val {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--brand-blue);
+        }
+
+        .stat-item-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 4px;
+            font-weight: 700;
+        }
+
+        /* --- TRUST & SERVICES --- */
+        .section-trust {
+            max-width: 1200px;
+            margin: 70px auto 40px auto;
+            padding: 0 5%;
+        }
+
+        .trust-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 25px;
+        }
+
+        .trust-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .trust-card-icon {
+            color: var(--brand-blue);
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        .trust-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .trust-card p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* --- REVIEWS SECTION --- */
+        .section-reviews {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            padding: 80px 0;
+            margin: 70px 0;
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .reviews-header {
+            max-width: 1200px;
+            margin: 0 auto 40px auto;
+            padding: 0 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            position: relative;
+            z-index: 2;
+        }
+
+        .section-title-wrapper h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+
+        .section-title-wrapper p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .carousel-nav {
+            display: flex;
+            gap: 12px;
+        }
+
+        .carousel-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: transform 0.1s ease, background-color 0.2s ease;
+        }
+
+        .carousel-btn:active {
+            transform: scale(0.92);
+        }
+
+        .carousel-btn:hover {
+            background: var(--brand-accent);
+            border-color: var(--brand-accent);
+        }
+
+        .reviews-slider-container {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            padding: 10px 5% 30px 5%;
+            position: relative;
+            z-index: 2;
+            scrollbar-width: none;
+        }
+
+        .reviews-slider-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .reviews-column {
+            flex: 0 0 85%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            scroll-snap-align: start;
+        }
+
+        .glass-review-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .review-stars { color: #fbbf24; font-size: 0.85rem; margin-bottom: 12px; }
+        .review-text { font-size: 0.88rem; color: #e2e8f0; line-height: 1.5; margin-bottom: 16px; font-style: italic; }
+        .review-author { display: flex; align-items: center; gap: 12px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 12px; }
+        .author-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.3); }
+        .author-info { display: flex; flex-direction: column; }
+        .author-name { font-size: 0.88rem; font-weight: 700; color: #ffffff; }
+        .author-tag { font-size: 0.75rem; color: #94a3b8; }
+
+        /* PRO QUOTE CALCULATOR */
+        .section-quote {
+            background-color: var(--brand-blue-light);
+            color: #ffffff;
+            padding: 60px 5%;
+            margin: 60px 0;
+        }
+
+        .quote-container { max-width: 1000px; margin: 0 auto; }
+        .quote-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 25px; }
+        .quote-grid select, .quote-grid input {
+            width: 100%; padding: 12px 16px; border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05); color: #ffffff; outline: none;
+        }
+        .quote-grid select option { background-color: #0f172a; color: white; }
+        
+        .btn-quote { 
+            background: var(--brand-accent); 
+            color: white; 
+            border: none; 
+            padding: 14px; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            width: 100%; 
+            margin-top: 15px; 
+            transition: transform 0.1s ease, opacity 0.2s ease;
+        }
+        .btn-quote:active { transform: scale(0.97); }
+
+        /* FOOTER */
+        footer {
+            background: var(--brand-blue);
+            color: #94a3b8;
+            padding: 40px 5% 20px 5%;
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 30px; margin-bottom: 30px; }
+        .footer-col h4 { color: white; font-size: 0.95rem; margin-bottom: 15px; }
+        .footer-col ul { list-style: none; padding: 0; margin: 0; }
+        .footer-col ul li { margin-bottom: 8px; }
+        .footer-col ul a { color: #94a3b8; text-decoration: none; }
+        .footer-col ul a:hover { color: white; }
+        .footer-bottom { max-width: 1200px; margin: 0 auto; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center; }
+
+        /* FIXED CHAT BUTTON */
+        .custom-chat-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background-color: var(--brand-accent);
+            color: white;
+            border: none;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            z-index: 9999;
+            transition: transform 0.15s ease, background-color 0.2s ease;
+        }
+
+        .custom-chat-btn:active {
+            transform: scale(0.90);
+        }
+
+        .custom-chat-btn:hover {
+            transform: scale(1.08);
+            opacity: 0.95;
+        }
+
+        /* INTERNAL CHAT MODAL WINDOW */
+        .chat-modal {
+            display: flex;
+            position: fixed;
+            bottom: 95px;
+            right: 25px;
+            width: 350px;
+            max-width: calc(100vw - 40px);
+            height: 450px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 9998;
+            flex-direction: column;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(15px) scale(0.95);
+            transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s ease;
+        }
+
+        .chat-modal.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .chat-header {
+            background: var(--brand-blue);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+        }
+
+        .chat-header button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .chat-footer {
+            padding: 12px;
+            border-top: 1px solid var(--border-color);
+            background: var(--card-bg);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chat-footer input, .chat-footer textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            outline: none;
+            background: var(--bg-light);
+            color: var(--text-main);
+        }
+
+        .chat-footer button {
+            background: var(--brand-accent);
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2rem; }
+            .burger-btn { display: block; }
+            .nav-menu {
+                display: none; position: absolute; top: 100%; left: 0; width: 100%;
+                background: var(--card-bg); flex-direction: column; padding: 20px 5%;
+                gap: 15px; border-bottom: 1px solid var(--border-color);
+                box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            }
+            .nav-menu.active { display: flex; }
+            .reviews-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+            .custom-chat-btn { bottom: 20px; right: 20px; width: 52px; height: 52px; font-size: 1.3rem; }
+            .chat-modal { bottom: 85px; right: 15px; width: calc(100vw - 30px); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MAIN NAVBAR -->
+    <nav>
+        <a href="#" class="brand-logo">
+            <div class="brand-logo-icon">
+                <i class="fa-solid fa-cubes"></i>
+            </div>
+            <div class="brand-logo-text">
+                <span class="title">VANGUARD FREIGHT</span>
+                <span class="subtitle" id="t-sub-log">International Logistics</span>
+            </div>
+        </a>
+
+        <ul class="nav-menu" id="navMenu">
+            <li><a href="#services" id="t-nav-serv" onclick="closeMenu()">Services</a></li>
+            <li><a href="#avis" id="t-nav-rev" onclick="closeMenu()">Client Reviews</a></li>
+            <li><a href="#devis" id="t-nav-quote" onclick="closeMenu()">Express Quote</a></li>
+            <li><a href="#" id="t-nav-theme" onclick="toggleDarkMode(); closeMenu(); return false;"><i class="fa-solid fa-moon"></i> Dark / Light Mode</a></li>
+        </ul>
+
+        <div class="nav-actions">
+            <!-- Intelligent Native Language Selector Button -->
+            <button class="lang-selector-btn" onclick="toggleLangModal()" title="Change language">
+                <i class="fa-solid fa-globe"></i>
+                <span id="currentLangLabel">FR</span>
+            </button>
+
+            <button class="burger-btn" onclick="toggleMenu()" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <!-- LANGUAGE SELECTION MODAL WITH SEARCH -->
+    <div class="lang-modal" id="langModal">
+        <div class="lang-modal-content">
+            <div class="lang-modal-header">
+                <span id="t-mod-title">Select Language</span>
+                <button onclick="toggleLangModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="lang-search-box">
+                <div class="lang-search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="langSearchInput" placeholder="Search language..." onkeyup="filterLanguages()">
+                </div>
+            </div>
+            <div class="lang-list" id="langList">
+                <button class="lang-item" data-search="français french francais france" onclick="changeLanguage('fr', 'FR')"><span class="lang-flag">🇫🇷</span> Français (French)</button>
+                <button class="lang-item" data-search="english anglais england uk usa royaume-uni" onclick="changeLanguage('en', 'EN')"><span class="lang-flag">🇬🇧</span> English</button>
+                <button class="lang-item" data-search="deutsch german allemand allemagne germany" onclick="changeLanguage('de', 'DE')"><span class="lang-flag">🇩🇪</span> Deutsch (German)</button>
+                <button class="lang-item" data-search="español espanol spanish espagnol espagne spain" onclick="changeLanguage('es', 'ES')"><span class="lang-flag">🇪🇸</span> Español (Spanish)</button>
+                <button class="lang-item" data-search="italiano italian italien italie italy" onclick="changeLanguage('it', 'IT')"><span class="lang-flag">🇮🇹</span> Italiano (Italian)</button>
+                <button class="lang-item" data-search="中文 chinese chinois chine china zhongwen mandarin" onclick="changeLanguage('zh', 'ZH')"><span class="lang-flag">🇨🇳</span> 中文 (Chinese)</button>
+                <button class="lang-item" data-search="العربية arabic arabe arabia arabie saoudite maroc algerie" onclick="changeLanguage('ar', 'AR')"><span class="lang-flag">🇸🇦</span> العربية (Arabic)</button>
+                <button class="lang-item" data-search="português portugues portuguese portugais portugal brasil brazil bresil" onclick="changeLanguage('pt', 'PT')"><span class="lang-flag">🇵🇹</span> Português (Portuguese)</button>
+                <button class="lang-item" data-search="nederlands dutch néerlandais neerlandais pays-bas netherlands holland hollande" onclick="changeLanguage('nl', 'NL')"><span class="lang-flag">🇳🇱</span> Nederlands (Dutch)</button>
+                <button class="lang-item" data-search="русский russian russe russie russia" onclick="changeLanguage('ru', 'RU')"><span class="lang-flag">🇷🇺</span> Русский (Russian)</button>
+                <button class="lang-item" data-search="polski polish polonais pologne poland polska polen" onclick="changeLanguage('pl', 'PL')"><span class="lang-flag">🇵🇱</span> Polski (Polish)</button>
+                <button class="lang-item" data-search="日本語 japanese japonais japon japan nihongo" onclick="changeLanguage('ja', 'JA')"><span class="lang-flag">🇯🇵</span> 日本語 (Japanese)</button>
+                <button class="lang-item" data-search="한국어 korean coréen coreen corée coree korea hangugeo" onclick="changeLanguage('ko', 'KO')"><span class="lang-flag">🇰🇷</span> 한국어 (Korean)</button>
+                <button class="lang-item" data-search="हिन्दी hindi inde india" onclick="changeLanguage('hi', 'HI')"><span class="lang-flag">🇮🇳</span> हिन्दी (Hindi)</button>
+                <button class="lang-item" data-search="türkçe turkce turkish turc turquie turkey türkiye" onclick="changeLanguage('tr', 'TR')"><span class="lang-flag">🇹🇷</span> Türkçe (Turkish)</button>
+                <button class="lang-item" data-search="tiếng việt tieng viet vietnamese vietnamien vietnam" onclick="changeLanguage('vi', 'VI')"><span class="lang-flag">🇻🇳</span> Tiếng Việt (Vietnamese)</button>
+                <button class="lang-item" data-search="bahasa indonesia indonesian indonésien indonesien indonésie indonesie" onclick="changeLanguage('id', 'ID')"><span class="lang-flag">🇮🇩</span> Bahasa Indonesia (Indonesian)</button>
+                <button class="lang-item" data-search="svenska swedish suédois suedois suède suede sweden sverige" onclick="changeLanguage('sv', 'SV')"><span class="lang-flag">🇸🇪</span> Svenska (Swedish)</button>
+                <button class="lang-item" data-search="українська ukrainska ukrainian ukrainien ukraine" onclick="changeLanguage('uk', 'UK')"><span class="lang-flag">🇺🇦</span> Українська (Ukrainian)</button>
+                <button class="lang-item" data-search="română romana romanian roumain roumanie romania" onclick="changeLanguage('ro', 'RO')"><span class="lang-flag">🇷🇴</span> Română (Romanian)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+        <div class="hero-container">
+            <div class="hero-badge" id="t-hero-badge">
+                <i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> Suivi de flotte et de fret en temps réel actif
+            </div>
+            <h1 class="hero-title" id="t-hero-title">Routage mondial sécurisé de marchandises et fret stratégique</h1>
+            <p class="hero-subtitle" id="t-hero-sub">Opérateur logistique mondial spécialisé dans le transport maritime, aérien et routier. Gestion globale des douanes et de la supply chain.</p>
+        </div>
+    </section>
+
+    <!-- SEARCH / TRACKING MODULE -->
+    <div class="search-module">
+        <div class="module-tabs">
+            <button class="tab-btn active" id="t-tab-track"><i class="fa-solid fa-location-dot"></i> Suivre un colis</button>
+            <button class="tab-btn" onclick="document.getElementById('devis').scrollIntoView();" id="t-tab-est"><i class="fa-solid fa-calculator"></i> Obtenir une estimation</button>
+        </div>
+        <div class="module-body">
+            <div class="search-form-row">
+                <div class="search-input-wrapper">
+                    <i class="fa-solid fa-barcode"></i>
+                    <input type="text" id="trackingCode" placeholder="Entrez votre numéro de suivi (Ex: TRK-7700)" onkeydown="if(event.key === 'Enter') runTracking();">
+                </div>
+                <button class="btn-submit-search" id="searchBtn" onclick="runTracking()">
+                    <i class="fa-solid fa-magnifying-glass"></i> <span id="t-btn-search">Rechercher</span>
+                </button>
+            </div>
+            <div id="index-error-message">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span id="errorText">Numéro de suivi incorrect. Veuillez vérifier votre code.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATISTICS -->
+    <div class="stats-container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-item-val"><i class="fa-solid fa-globe"></i> 180+</div>
+                <div class="stat-item-label" id="t-stat-1">Pays desservis</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-item-val"><i class="fa-solid fa-shield-check"></i> 99.4%</div>
+                <div class="stat-item-label" id="t-stat-2">Conformité douanière</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-item-val"><i class="fa-solid fa-clock-rotate-left"></i> 24/7</div>
+                <div class="stat-item-label" id="t-stat-3">Traçabilité flotte</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-item-val"><i class="fa-solid fa-handshake"></i> 15k+</div>
+                <div class="stat-item-label" id="t-stat-4">Clients professionnels</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMMITMENTS AND CERTIFICATIONS -->
+    <section class="section-trust" id="services">
+        <div class="trust-grid">
+            <div class="trust-card">
+                <div class="trust-card-icon"><i class="fa-solid fa-plane-departure"></i></div>
+                <h3 id="t-card1-title">Fret aérien & Express</h3>
+                <p id="t-card1-desc">Délais garantis sur les principales liaisons internationales avec dédouanement prioritaire.</p>
+            </div>
+            <div class="trust-card">
+                <div class="trust-card-icon"><i class="fa-solid fa-ship"></i></div>
+                <h3 id="t-card2-title">Transport Maritime (FCL/LCL)</h3>
+                <p id="t-card2-desc">Gestion complète de conteneurs complets et de groupage vers plus de 180 ports mondiaux.</p>
+            </div>
+            <div class="trust-card">
+                <div class="trust-card-icon"><i class="fa-solid fa-file-shield"></i></div>
+                <h3 id="t-card3-title">Commission en Douane</h3>
+                <p id="t-card3-desc">Gestion intégrée des déclarations et de la conformité réglementaire par nos transitaires agréés.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CLIENT REVIEWS SECTION -->
+    <section class="section-reviews" id="avis">
+        <div class="reviews-header">
+            <div class="section-title-wrapper">
+                <h2 id="t-rev-h">Expériences certifiées & Témoignages</h2>
+                <p id="t-rev-p">Glissez vers la gauche pour découvrir tous les avis de nos clients</p>
+            </div>
+
+            <div class="carousel-nav">
+                <button class="carousel-btn" onclick="scrollCarousel(-1)" aria-label="Previous reviews"><i class="fa-solid fa-arrow-left"></i></button>
+                <button class="carousel-btn" onclick="scrollCarousel(1)" aria-label="Next reviews"><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <div class="reviews-slider-container" id="reviewsSlider">
+            <!-- Column 1 -->
+            <div class="reviews-column">
+                <div class="glass-review-card">
+                    <div>
+                        <div class="review-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p class="review-text" id="t-rev-1">"Suivi très clair et précis. Mon fournisseur m'a transmis mon code d'expédition et j'ai pu suivre l'arrivée des marchandises sans accroc."</p>
+                    </div>
+                    <div class="review-author">
+                        <img src="https://i.pravatar.cc/150?img=1" alt="Sarah M." class="author-avatar">
+                        <div class="author-info"><span class="author-name">Sarah M.</span><span class="author-tag" id="t-auth-1">Importatrice Électronique</span></div>
+                    </div>
+                </div>
+                <div class="glass-review-card">
+                    <div>
+                        <div class="review-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></div>
+                        <p class="review-text" id="t-rev-2">"Excellente traçabilité. J'ai reçu mes envois avec un contrôle des statuts rigoureux et très professionnel."</p>
+                    </div>
+                    <div class="review-author">
+                        <img src="https://i.pravatar.cc/150?img=2" alt="Alain K." class="author-avatar">
+                        <div class="author-info"><span class="author-name">Alain K.</span><span class="author-tag" id="t-auth-2">Directeur Achats</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 2 -->
+            <div class="reviews-column">
+                <div class="glass-review-card">
+                    <div>
+                        <div class="review-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></div>
+                        <p class="review-text" id="t-rev-3">"Interface épurée et haut de gamme. Très bon service global pour le suivi des étapes de transport."</p>
+                    </div>
+                    <div class="review-author">
+                        <img src="https://i.pravatar.cc/150?img=3" alt="Elena V." class="author-avatar">
+                        <div class="author-info"><span class="author-name">Elena V.</span><span class="author-tag" id="t-auth-3">Acheteuse Internationale</span></div>
+                    </div>
+                </div>
+                <div class="glass-review-card">
+                    <div>
+                        <div class="review-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p class="review-text" id="t-rev-4">"Fiable et transparent. La confirmation de commande sous lettre de transport donne une confiance immédiate."</p>
+                    </div>
+                    <div class="review-author">
+                        <img src="https://i.pravatar.cc/150?img=4" alt="Samuel B." class="author-avatar">
+                        <div class="author-info"><span class="author-name">Samuel B.</span><span class="author-tag" id="t-auth-4">Trader International</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 3 -->
+            <div class="reviews-column">
+                <div class="glass-review-card">
+                    <div>
+                        <div class="review-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p class="review-text" id="t-rev-5">"Support irréprochable pour nos formalités douanières. Zéro stress, la marchandise est arrivée pile à l'heure."</p>
+                    </div>
+                    <div class="review-author">
+                        <img src="https://i.pravatar.cc/150?img=11" alt="Marc D." class="author-avatar">
+                        <div class="author-info"><span class="author-name">Marc D.</span><span class="author-tag" id="t-auth-5">Entrepreneur Industriel</span></div>
+                    </div>
+                </div>
+                <div class="glass-review-card">
+                    <div>
+                        <div class="review-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p class="review-text" id="t-rev-6">"Le support client répond instantanément via le chat intégré. C'est un énorme plus pour rassurer nos propres clients finaux."</p>
+                    </div>
+                    <div class="review-author">
+                        <img src="https://i.pravatar.cc/150?img=15" alt="Jessica L." class="author-avatar">
+                        <div class="author-info"><span class="author-name">Jessica L.</span><span class="author-tag" id="t-auth-6">Responsable E-commerce</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 4 -->
+            <div class="reviews-column">
+                <div class="glass-review-card">
+                    <div>
+                        <div class="review-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></div>
+                        <p class="review-text" id="t-rev-7">"En tant qu'utilisateur régulier de fret maritime consolidé, je salue la constance de la qualité de service et la précision des statuts en ligne."</p>
+                    </div>
+                    <div class="review-author">
+                        <img src="https://i.pravatar.cc/150?img=22" alt="Thomas R." class="author-avatar">
+                        <div class="author-info"><span class="author-name">Thomas R.</span><span class="author-tag" id="t-auth-7">Grossiste en Biens d'Équipement</span></div>
+                    </div>
+                </div>
+                <div class="glass-review-card">
+                    <div>
+                        <div class="review-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p class="review-text" id="t-rev-8">"Plateforme moderne et intuitive. Le module de code de suivi ne bugue jamais et s'adapte parfaitement sur mon smartphone."</p>
+                    </div>
+                    <div class="review-author">
+                        <img src="https://i.pravatar.cc/150?img=32" alt="Fatou N." class="author-avatar">
+                        <div class="author-info"><span class="author-name">Fatou N.</span><span class="author-tag" id="t-auth-8">Consultante Logistique</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRO QUOTE CALCULATOR -->
+    <section class="section-quote" id="devis">
+        <div class="quote-container">
+            <h2 id="t-q-h">Demande de Devis Instantané</h2>
+            <p id="t-q-p" style="color: #94a3b8; font-size: 0.95rem;">Obtenez une tarification sur mesure pour vos envois professionnels.</p>
+            <form onsubmit="handleQuoteSubmit(event)">
+                <div class="quote-grid">
+                    <select id="t-q-sel" required>
+                        <option value="">Mode de transport...</option>
+                        <option value="air">Fret Aérien Express</option>
+                        <option value="sea">Fret Maritime</option>
+                        <option value="road">Transport Routier Européen</option>
+                    </select>
+                    <input type="text" id="t-q-dep" placeholder="Ville/Pays de départ" required>
+                    <input type="text" id="t-q-dest" placeholder="Ville/Pays de destination" required>
+                    <input type="number" id="t-q-wt" placeholder="Poids estimé (kg)" required>
+                    <input type="email" id="t-q-email" placeholder="Votre adresse email" autocomplete="email" required>
+                </div>
+                <button type="submit" class="btn-quote" id="t-q-btn">Demander un Tarif Pro</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- CORPORATE FOOTER -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-col">
+                <h4>Vanguard Freight & Logistics</h4>
+                <p id="t-foot-desc" style="max-width: 280px; line-height: 1.5;">Leader dans la gestion de la chaîne d'approvisionnement et le transport international de fret.</p>
+            </div>
+            <div class="footer-col">
+                <h4 id="t-foot-serv-h">Services</h4>
+                <ul>
+                    <li><a href="#services" id="t-fserv-1">Fret Maritime</a></li>
+                    <li><a href="#services" id="t-fserv-2">Fret Aérien</a></li>
+                    <li><a href="#services" id="t-fserv-3">Logistique & Stockage</a></li>
+                    <li><a href="#services" id="t-fserv-4">Commission en Douane</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4 id="t-foot-comp-h">Conformité</h4>
+                <ul>
+                    <li><a id="t-fcomp-1" style="cursor: default; pointer-events: none;">Certifications ISO 9001</a></li>
+                    <li><a id="t-fcomp-2" style="cursor: default; pointer-events: none;">Statut OEA</a></li>
+                    <li hidden><a href="#" id="t-fcomp-3">Mentions Légales</a></li>
+                    <li hidden><a href="#" id="t-fcomp-4">Politique de Confidentialité</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom" id="t-copy">
+            &copy; 2026 Vanguard Freight & Logistics. Tous droits réservés.
+        </div>
+    </footer>
+
+    <!-- FIXED CHAT BUTTON -->
+    <button class="custom-chat-btn" onclick="toggleChatModal()" title="Ouvrir le chat en direct">
+        <i class="fa-solid fa-comment-dots"></i>
+    </button>
+
+    <!-- INTERNAL CHAT WINDOW -->
+    <div class="chat-modal" id="chatModal">
+        <div class="chat-header">
+            <span id="t-chat-title">Service Client - Vanguard</span>
+            <button onclick="toggleChatModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="chat-body" id="chatBody">
+            <div id="t-chat-welcome" style="background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px;">
+                Bonjour ! Laissez-nous votre adresse email et votre message, nous vous répondrons par email.
+            </div>
+        </div>
+        <div class="chat-footer">
+            <input type="email" id="clientName" placeholder="Votre adresse email..." autocomplete="email">
+            <textarea id="clientMessage" placeholder="Votre message..." rows="2"></textarea>
+            <button onclick="sendClientMessage()" id="t-chat-send">Envoyer le message</button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC & LOCALIZED DICTIONARY -->
+    <script>
+        const SUPABASE_URL = 'https://qujrkchtchhuiakodktv.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_VgSG2lwniPpcDtgxxf3evg_E_RJCVIV';
+        let supabaseClient = null;
+        try { supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+        catch (e) { console.error('Supabase indisponible :', e); }
+
+        // --- MULTILINGUAL DICTIONARY ---
+        const translations = {
+            fr: {
+                title: "Vanguard Freight & Logistics | Transport International & Fret Express",
+                subLog: "International Logistics",
+                navServ: "Services",
+                navRev: "Avis Clients",
+                navQuote: "Devis Express",
+                navTheme: "Mode Sombre / Clair",
+                modTitle: "Sélectionner la langue",
+                heroBadge: "Suivi de flotte et de fret en temps réel actif",
+                heroTitle: "Routage mondial sécurisé de marchandises et fret stratégique",
+                heroSub: "Opérateur logistique mondial spécialisé dans le transport maritime, aérien et routier. Gestion globale des douanes et de la supply chain.",
+                tabTrack: "Suivre un colis",
+                tabEst: "Obtenir une estimation",
+                trackPlace: "Entrez votre numéro de suivi (Ex: TRK-7700)",
+                btnSearch: "Rechercher",
+                errText: "Numéro de suivi incorrect. Veuillez vérifier votre code.",
+                stat1: "Pays desservis",
+                stat2: "Conformité douanière",
+                stat3: "Traçabilité flotte",
+                stat4: "Clients professionnels",
+                card1Title: "Fret aérien & Express",
+                card1Desc: "Délais garantis sur les principales liaisons internationales avec dédouanement prioritaire.",
+                card2Title: "Transport Maritime (FCL/LCL)",
+                card2Desc: "Gestion complète de conteneurs complets et de groupage vers plus de 180 ports mondiaux.",
+                card3Title: "Commission en Douane",
+                card3Desc: "Gestion intégrée des déclarations et de la conformité réglementaire par nos transitaires agréés.",
+                revH: "Expériences certifiées & Témoignages",
+                revP: "Glissez vers la gauche pour découvrir tous les avis de nos clients",
+                quoteH: "Demande de Devis Instantané",
+                quoteP: "Obtenez une tarification sur mesure pour vos envois professionnels.",
+                quoteBtn: "Demander un Tarif Pro",
+                footDesc: "Leader dans la gestion de la chaîne d'approvisionnement et le transport international de fret.",
+                footServH: "Services",
+                footCompH: "Conformité",
+                copy: "© 2026 Vanguard Freight & Logistics. Tous droits réservés.",
+                chatTitle: "Service Client - Vanguard",
+                chatWelcome: "Bonjour ! Comment pouvons-nous vous aider concernant votre fret ou vos expéditions ? Laissez-nous un message.",
+                chatName: "Votre Nom...",
+                chatMsg: "Votre message...",
+                chatSend: "Envoyer le message"
+            },
+            en: {
+                title: "Vanguard Freight & Logistics | International Transport & Express Freight",
+                subLog: "International Logistics",
+                navServ: "Services",
+                navRev: "Client Reviews",
+                navQuote: "Express Quote",
+                navTheme: "Dark / Light Mode",
+                modTitle: "Select Language",
+                heroBadge: "Real-Time Fleet & Freight Tracking Active",
+                heroTitle: "Secure Global Routing of Goods & Strategic Freight",
+                heroSub: "Global logistics operator specialized in maritime, air, and road freight. Comprehensive customs and supply chain management.",
+                tabTrack: "Track a Shipment",
+                tabEst: "Get an Estimate",
+                trackPlace: "Enter your tracking number (Ex: TRK-7700)",
+                btnSearch: "Search",
+                errText: "Incorrect tracking number. Please verify your code.",
+                stat1: "Served Countries",
+                stat2: "Customs Compliance",
+                stat3: "Fleet Traceability",
+                stat4: "Corporate Clients",
+                card1Title: "Air Freight & Express",
+                card1Desc: "Guaranteed transit times on major international routes with priority customs clearance.",
+                card2Title: "Maritime Transport (FCL/LCL)",
+                card2Desc: "Comprehensive management of full containers and consolidation to over 180 global ports.",
+                card3Title: "Customs Brokerage",
+                card3Desc: "Integrated management of declarations and regulatory compliance by our certified brokers.",
+                revH: "Certified Experiences & Testimonials",
+                revP: "Swipe left to discover all feedback and reviews from our clients",
+                quoteH: "Instant Quote Request",
+                quoteP: "Get customized pricing for your professional shipments.",
+                quoteBtn: "Request Pro Rate",
+                footDesc: "Leader in supply chain management and international freight transport.",
+                footServH: "Services",
+                footCompH: "Compliance",
+                copy: "© 2026 Vanguard Freight & Logistics. All rights reserved.",
+                chatTitle: "Customer Service - Vanguard",
+                chatWelcome: "Hello! How can we help you regarding your freight or shipments? Leave us a message.",
+                chatName: "Your Name...",
+                chatMsg: "Your message...",
+                chatSend: "Send Message"
+            },
+            de: {
+                title: "Vanguard Freight & Logistics | Internationaler Transport & Expressfracht",
+                subLog: "Internationale Logistik",
+                navServ: "Dienstleistungen",
+                navRev: "Kundenbewertungen",
+                navQuote: "Express-Angebot",
+                navTheme: "Dunkel- / Hellmodus",
+                modTitle: "Sprache auswählen",
+                heroBadge: "Echtzeit-Flotten- und Frachtverfolgung aktiv",
+                heroTitle: "Sicheres globales Routing von Waren & strategischer Fracht",
+                heroSub: "Globaler Logistikdienstleister, spezialisiert auf See-, Luft- und Straßenfracht. Umfassendes Zoll- und Lieferkettenmanagement.",
+                tabTrack: "Sendung verfolgen",
+                tabEst: "Kostenvoranschlag erhalten",
+                trackPlace: "Sendungsnummer eingeben (z. B. TRK-7700)",
+                btnSearch: "Suchen",
+                errText: "Falsche Sendungsnummer. Bitte überprüfen Sie Ihren Code.",
+                stat1: "Belieferte Länder",
+                stat2: "Zollkonformität",
+                stat3: "Flottenrückverfolgbarkeit",
+                stat4: "Geschäftskunden",
+                card1Title: "Luftfracht & Express",
+                card1Desc: "Garantierte Laufzeiten auf den wichtigsten internationalen Routen mit prioritärer Zollabfertigung.",
+                card2Title: "Seefracht (FCL/LCL)",
+                card2Desc: "Umfassendes Management von Vollcontainern und Stückgut zu über 180 Welthäfen.",
+                card3Title: "Zollabwicklung",
+                card3Desc: "Integrierte Verwaltung von Erklärungen und regulatorischer Konformität durch zertifizierte Broker.",
+                revH: "Zertifizierte Erfahrungen & Referenzen",
+                revP: "Wischen Sie nach links, um alle Kundenbewertungen zu sehen",
+                quoteH: "Sofortige Angebotsanfrage",
+                quoteP: "Erhalten Sie maßgeschneiderte Preise für Ihre professionellen Sendungen.",
+                quoteBtn: "Pro-Tarif anfordern",
+                footDesc: "Führend im Supply-Chain-Management und internationalen Frachttransport.",
+                footServH: "Dienstleistungen",
+                footCompH: "Konformität",
+                copy: "© 2026 Vanguard Freight & Logistics. Alle Rechte vorbehalten.",
+                chatTitle: "Kundenservice - Vanguard",
+                chatWelcome: "Hallo! Wie können wir Ihnen bezüglich Ihrer Fracht oder Sendungen helfen? Hinterlassen Sie uns eine Nachricht.",
+                chatName: "Ihr Name...",
+                chatMsg: "Ihre Nachricht...",
+                chatSend: "Nachricht senden"
+            },
+            es: {
+                title: "Vanguard Freight & Logistics | Transporte Internacional y Carga Express",
+                subLog: "Logística Internacional",
+                navServ: "Servicios",
+                navRev: "Reseñas de Clientes",
+                navQuote: "Cotización Express",
+                navTheme: "Modo Oscuro / Claro",
+                modTitle: "Seleccionar Idioma",
+                heroBadge: "Seguimiento de flota y carga en tiempo real activo",
+                heroTitle: "Ruta global segura de mercancías y carga estratégica",
+                heroSub: "Operador logístico global especializado en transporte marítimo, aéreo y terrestre. Gestión integral de aduanas y cadena de suministro.",
+                tabTrack: "Rastrear un envío",
+                tabEst: "Obtener presupuesto",
+                trackPlace: "Ingrese su número de seguimiento (Ej: TRK-7700)",
+                btnSearch: "Buscar",
+                errText: "Número de seguimiento incorrecto. Verifique su código.",
+                stat1: "Países atendidos",
+                stat2: "Cumplimiento aduanero",
+                stat3: "Trazabilidad de flota",
+                stat4: "Clientes corporativos",
+                card1Title: "Carga Aérea y Express",
+                card1Desc: "Tiempos de tránsito garantizados en rutas internacionales con despacho aduanero prioritario.",
+                card2Title: "Transporte Marítimo (FCL/LCL)",
+                card2Desc: "Gestión completa de contenedores completos y consolidación a más de 180 puertos globales.",
+                card3Title: "Agenciamiento Aduanero",
+                card3Desc: "Gestión integrada de declaraciones y cumplimiento normativo por nuestros agentes certificados.",
+                revH: "Experiencias Certificadas y Testimonios",
+                revP: "Desliza hacia la izquierda para ver todas las reseñas",
+                quoteH: "Solicitud de Cotización Instantánea",
+                quoteP: "Obtenga precios personalizados para sus envíos profesionales.",
+                quoteBtn: "Solicitar Tarifa Pro",
+                footDesc: "Líder en la gestión de la cadena de suministro y transporte internacional de carga.",
+                footServH: "Servicios",
+                footCompH: "Cumplimiento",
+                copy: "© 2026 Vanguard Freight & Logistics. Todos los derechos reservados.",
+                chatTitle: "Servicio al Cliente - Vanguard",
+                chatWelcome: "¡Hola! ¿Cómo podemos ayudarle con su carga o envíos? Déjenos un mensaje.",
+                chatName: "Su Nombre...",
+                chatMsg: "Su mensaje...",
+                chatSend: "Enviar mensaje"
+            }
+        };
+
+        // --- Compléments de traduction (avis, devis, pied de page, recherche, chat) ---
+        Object.assign(translations.fr, {
+            langSearch: "Rechercher une langue...", btnChecking: "Vérification...",
+            errEmpty: "Veuillez entrer un numéro de suivi valide.",
+            errNotFound: "Le numéro de suivi \"{0}\" est incorrect ou introuvable. Veuillez vérifier votre code.",
+            errServer: "Impossible de joindre le serveur. Veuillez réessayer.",
+            rev1: "\"Suivi très clair et précis. Mon fournisseur m'a transmis mon code d'expédition et j'ai pu suivre l'arrivée des marchandises sans accroc.\"", auth1: "Importatrice Électronique",
+            rev2: "\"Excellente traçabilité. J'ai reçu mes envois avec un contrôle des statuts rigoureux et très professionnel.\"", auth2: "Directeur Achats",
+            rev3: "\"Interface épurée et haut de gamme. Très bon service global pour le suivi des étapes de transport.\"", auth3: "Acheteuse Internationale",
+            rev4: "\"Fiable et transparent. La confirmation de commande sous lettre de transport donne une confiance immédiate.\"", auth4: "Trader International",
+            rev5: "\"Support irréprochable pour nos formalités douanières. Zéro stress, la marchandise est arrivée pile à l'heure.\"", auth5: "Entrepreneur Industriel",
+            rev6: "\"Le support client répond instantanément via le chat intégré. C'est un énorme plus pour rassurer nos propres clients finaux.\"", auth6: "Responsable E-commerce",
+            rev7: "\"En tant qu'utilisateur régulier de fret maritime consolidé, je salue la constance de la qualité de service et la précision des statuts en ligne.\"", auth7: "Grossiste en Biens d'Équipement",
+            rev8: "\"Plateforme moderne et intuitive. Le module de code de suivi ne bugue jamais et s'adapte parfaitement sur mon smartphone.\"", auth8: "Consultante Logistique",
+            qSel: "Mode de transport...", qAir: "Fret Aérien Express", qSea: "Fret Maritime", qRoad: "Transport Routier Européen",
+            qDep: "Ville/Pays de départ", qDest: "Ville/Pays de destination", qWt: "Poids estimé (kg)",
+            quoteOk: "Votre demande de devis a été soumise avec succès. Un conseiller vous contactera rapidement.",
+            quoteErr: "Erreur lors de l'envoi de la demande. Veuillez réessayer.",
+            fserv1: "Fret Maritime", fserv2: "Fret Aérien", fserv3: "Logistique & Stockage", fserv4: "Commission en Douane",
+            fcomp1: "Certifications ISO 9001", fcomp2: "Statut OEA", fcomp3: "Mentions Légales", fcomp4: "Politique de Confidentialité",
+            chatNeed: "Veuillez remplir votre nom et votre message.", chatOk: "Message envoyé avec succès ! Nous vous répondrons rapidement.",
+            chatErr: "Erreur lors de l'envoi du message. Veuillez vérifier votre connexion.",
+            chatBtn: "Ouvrir le chat en direct", langBtn: "Changer de langue", prev: "Avis précédents", next: "Avis suivants", menu: "Menu"
+        });
+        Object.assign(translations.en, {
+            langSearch: "Search language...", btnChecking: "Checking...",
+            errEmpty: "Please enter a valid tracking number.",
+            errNotFound: "The tracking number \"{0}\" is incorrect or was not found. Please check your code.",
+            errServer: "Unable to reach the server. Please try again.",
+            rev1: "\"Very clear and precise tracking. My supplier sent me my shipping code and I followed the goods all the way to arrival without a hitch.\"", auth1: "Electronics Importer",
+            rev2: "\"Excellent traceability. I received my shipments with rigorous, very professional status checks.\"", auth2: "Purchasing Director",
+            rev3: "\"Clean, high-end interface. A very good overall service for following each transport step.\"", auth3: "International Buyer",
+            rev4: "\"Reliable and transparent. Order confirmation under a waybill gives immediate confidence.\"", auth4: "International Trader",
+            rev5: "\"Flawless support for our customs formalities. Zero stress, the goods arrived right on time.\"", auth5: "Industrial Entrepreneur",
+            rev6: "\"Customer support answers instantly through the built-in chat. A huge plus to reassure our own end customers.\"", auth6: "E-commerce Manager",
+            rev7: "\"As a regular user of consolidated sea freight, I appreciate the consistent service quality and the accuracy of online statuses.\"", auth7: "Capital Goods Wholesaler",
+            rev8: "\"Modern, intuitive platform. The tracking code module never glitches and fits my smartphone perfectly.\"", auth8: "Logistics Consultant",
+            qSel: "Transport mode...", qAir: "Express Air Freight", qSea: "Sea Freight", qRoad: "European Road Transport",
+            qDep: "Departure city/country", qDest: "Destination city/country", qWt: "Estimated weight (kg)",
+            quoteOk: "Your quote request has been submitted successfully. An advisor will contact you shortly.",
+            quoteErr: "Error while sending the request. Please try again.",
+            fserv1: "Sea Freight", fserv2: "Air Freight", fserv3: "Logistics & Storage", fserv4: "Customs Brokerage",
+            fcomp1: "ISO 9001 Certifications", fcomp2: "AEO Status", fcomp3: "Legal Notice", fcomp4: "Privacy Policy",
+            chatNeed: "Please fill in your name and your message.", chatOk: "Message sent successfully! We will reply shortly.",
+            chatErr: "Error while sending the message. Please check your connection.",
+            chatBtn: "Open live chat", langBtn: "Change language", prev: "Previous reviews", next: "Next reviews", menu: "Menu"
+        });
+        // Dictionnaires complets des langues (toutes les phrases du site)
+        const TR_FULL = {
+ "it": {
+  "title": "Vanguard Freight & Logistics | Trasporto Internazionale e Spedizioni Express",
+  "subLog": "Logistica Internazionale",
+  "navServ": "Servizi",
+  "navRev": "Recensioni",
+  "navQuote": "Preventivo Express",
+  "navTheme": "Modalità Scura / Chiara",
+  "modTitle": "Seleziona la lingua",
+  "heroBadge": "Tracciamento di flotta e merci in tempo reale attivo",
+  "heroTitle": "Instradamento globale sicuro di merci e carichi strategici",
+  "heroSub": "Operatore logistico globale specializzato in trasporto marittimo, aereo e su strada. Gestione completa di dogane e supply chain.",
+  "tabTrack": "Traccia una spedizione",
+  "tabEst": "Richiedi una stima",
+  "trackPlace": "Inserisci il tuo numero di tracciamento (Es: TRK-7700)",
+  "btnSearch": "Cerca",
+  "errText": "Numero di tracciamento non valido. Controlla il tuo codice.",
+  "stat1": "Paesi serviti",
+  "stat2": "Conformità doganale",
+  "stat3": "Tracciabilità della flotta",
+  "stat4": "Clienti aziendali",
+  "card1Title": "Trasporto aereo ed Express",
+  "card1Desc": "Tempi garantiti sulle principali tratte internazionali con sdoganamento prioritario.",
+  "card2Title": "Trasporto marittimo (FCL/LCL)",
+  "card2Desc": "Gestione completa di container interi e groupage verso oltre 180 porti nel mondo.",
+  "card3Title": "Intermediazione doganale",
+  "card3Desc": "Gestione integrata di dichiarazioni e conformità normativa da parte dei nostri spedizionieri autorizzati.",
+  "revH": "Esperienze certificate e testimonianze",
+  "revP": "Scorri verso sinistra per scoprire tutte le recensioni dei nostri clienti",
+  "quoteH": "Richiesta di preventivo istantaneo",
+  "quoteP": "Ottieni una tariffa su misura per le tue spedizioni professionali.",
+  "quoteBtn": "Richiedi una tariffa Pro",
+  "footDesc": "Leader nella gestione della supply chain e nel trasporto internazionale di merci.",
+  "footServH": "Servizi",
+  "footCompH": "Conformità",
+  "copy": "© 2026 Vanguard Freight & Logistics. Tutti i diritti riservati.",
+  "chatTitle": "Assistenza clienti - Vanguard",
+  "chatWelcome": "Buongiorno! Come possiamo aiutarti con la tua merce o le tue spedizioni? Lasciaci un messaggio.",
+  "chatName": "Il tuo nome...",
+  "chatMsg": "Il tuo messaggio...",
+  "chatSend": "Invia il messaggio",
+  "langSearch": "Cerca una lingua...",
+  "btnChecking": "Verifica in corso...",
+  "errEmpty": "Inserisci un numero di tracciamento valido.",
+  "errNotFound": "Il numero di tracciamento “{0}” non è corretto o non è stato trovato. Controlla il tuo codice.",
+  "errServer": "Impossibile raggiungere il server. Riprova.",
+  "rev1": "«Tracciamento molto chiaro e preciso. Il mio fornitore mi ha inviato il codice di spedizione e ho potuto seguire l'arrivo della merce senza intoppi.»",
+  "auth1": "Importatrice di elettronica",
+  "rev2": "«Ottima tracciabilità. Ho ricevuto le mie spedizioni con controlli di stato rigorosi e molto professionali.»",
+  "auth2": "Direttore acquisti",
+  "rev3": "«Interfaccia pulita e di alto livello. Ottimo servizio complessivo per seguire le fasi del trasporto.»",
+  "auth3": "Acquirente internazionale",
+  "rev4": "«Affidabile e trasparente. La conferma dell'ordine con lettera di vettura trasmette subito fiducia.»",
+  "auth4": "Trader internazionale",
+  "rev5": "«Assistenza impeccabile per le nostre formalità doganali. Zero stress, la merce è arrivata puntuale.»",
+  "auth5": "Imprenditore industriale",
+  "rev6": "«L'assistenza risponde subito tramite la chat integrata. Un grande vantaggio per rassicurare i nostri clienti finali.»",
+  "auth6": "Responsabile e-commerce",
+  "rev7": "«Come utente abituale del trasporto marittimo consolidato, apprezzo la costanza della qualità del servizio e la precisione degli stati online.»",
+  "auth7": "Grossista di beni strumentali",
+  "rev8": "«Piattaforma moderna e intuitiva. Il modulo del codice di tracciamento non ha mai problemi e si adatta perfettamente al mio smartphone.»",
+  "auth8": "Consulente logistica",
+  "qSel": "Modalità di trasporto...",
+  "qAir": "Trasporto aereo Express",
+  "qSea": "Trasporto marittimo",
+  "qRoad": "Trasporto stradale europeo",
+  "qDep": "Città/Paese di partenza",
+  "qDest": "Città/Paese di destinazione",
+  "qWt": "Peso stimato (kg)",
+  "quoteOk": "La tua richiesta di preventivo è stata inviata con successo. Un consulente ti contatterà a breve.",
+  "quoteErr": "Errore durante l'invio della richiesta. Riprova.",
+  "fserv1": "Trasporto marittimo",
+  "fserv2": "Trasporto aereo",
+  "fserv3": "Logistica e stoccaggio",
+  "fserv4": "Intermediazione doganale",
+  "fcomp1": "Certificazioni ISO 9001",
+  "fcomp2": "Status AEO",
+  "fcomp3": "Note legali",
+  "fcomp4": "Informativa sulla privacy",
+  "chatNeed": "Inserisci il tuo nome e il tuo messaggio.",
+  "chatOk": "Messaggio inviato con successo! Ti risponderemo a breve.",
+  "chatErr": "Errore durante l'invio del messaggio. Controlla la tua connessione.",
+  "chatBtn": "Apri la chat dal vivo",
+  "langBtn": "Cambia lingua",
+  "prev": "Recensioni precedenti",
+  "next": "Recensioni successive",
+  "menu": "Menu"
+ },
+ "pt": {
+  "title": "Vanguard Freight & Logistics | Transporte Internacional e Frete Expresso",
+  "subLog": "Logística Internacional",
+  "navServ": "Serviços",
+  "navRev": "Avaliações",
+  "navQuote": "Orçamento Expresso",
+  "navTheme": "Modo Escuro / Claro",
+  "modTitle": "Selecionar o idioma",
+  "heroBadge": "Rastreamento de frota e carga em tempo real ativo",
+  "heroTitle": "Roteamento global seguro de mercadorias e cargas estratégicas",
+  "heroSub": "Operador logístico global especializado em transporte marítimo, aéreo e rodoviário. Gestão completa de alfândega e cadeia de abastecimento.",
+  "tabTrack": "Rastrear uma encomenda",
+  "tabEst": "Obter uma estimativa",
+  "trackPlace": "Introduza o seu número de rastreio (Ex: TRK-7700)",
+  "btnSearch": "Pesquisar",
+  "errText": "Número de rastreio incorreto. Verifique o seu código.",
+  "stat1": "Países atendidos",
+  "stat2": "Conformidade aduaneira",
+  "stat3": "Rastreabilidade da frota",
+  "stat4": "Clientes empresariais",
+  "card1Title": "Frete aéreo e Expresso",
+  "card1Desc": "Prazos garantidos nas principais rotas internacionais com desembaraço prioritário.",
+  "card2Title": "Transporte marítimo (FCL/LCL)",
+  "card2Desc": "Gestão completa de contentores completos e carga consolidada para mais de 180 portos em todo o mundo.",
+  "card3Title": "Despacho aduaneiro",
+  "card3Desc": "Gestão integrada de declarações e conformidade regulamentar pelos nossos despachantes autorizados.",
+  "revH": "Experiências certificadas e testemunhos",
+  "revP": "Deslize para a esquerda para descobrir todas as avaliações dos nossos clientes",
+  "quoteH": "Pedido de orçamento instantâneo",
+  "quoteP": "Obtenha uma tarifa à medida para os seus envios profissionais.",
+  "quoteBtn": "Pedir uma tarifa Pro",
+  "footDesc": "Líder na gestão da cadeia de abastecimento e no transporte internacional de mercadorias.",
+  "footServH": "Serviços",
+  "footCompH": "Conformidade",
+  "copy": "© 2026 Vanguard Freight & Logistics. Todos os direitos reservados.",
+  "chatTitle": "Apoio ao cliente - Vanguard",
+  "chatWelcome": "Olá! Como podemos ajudá-lo com a sua carga ou envios? Deixe-nos uma mensagem.",
+  "chatName": "O seu nome...",
+  "chatMsg": "A sua mensagem...",
+  "chatSend": "Enviar a mensagem",
+  "langSearch": "Pesquisar um idioma...",
+  "btnChecking": "A verificar...",
+  "errEmpty": "Introduza um número de rastreio válido.",
+  "errNotFound": "O número de rastreio “{0}” está incorreto ou não foi encontrado. Verifique o seu código.",
+  "errServer": "Não foi possível contactar o servidor. Tente novamente.",
+  "rev1": "«Rastreio muito claro e preciso. O meu fornecedor enviou-me o código de expedição e acompanhei a chegada da mercadoria sem qualquer problema.»",
+  "auth1": "Importadora de eletrónica",
+  "rev2": "«Excelente rastreabilidade. Recebi os meus envios com um controlo de estados rigoroso e muito profissional.»",
+  "auth2": "Diretor de compras",
+  "rev3": "«Interface limpa e de topo. Muito bom serviço global para acompanhar as etapas do transporte.»",
+  "auth3": "Compradora internacional",
+  "rev4": "«Fiável e transparente. A confirmação da encomenda com guia de transporte dá confiança imediata.»",
+  "auth4": "Trader internacional",
+  "rev5": "«Apoio impecável nas nossas formalidades aduaneiras. Zero stress, a mercadoria chegou mesmo a tempo.»",
+  "auth5": "Empresário industrial",
+  "rev6": "«O apoio ao cliente responde de imediato através do chat integrado. Uma grande vantagem para tranquilizar os nossos próprios clientes finais.»",
+  "auth6": "Responsável de e-commerce",
+  "rev7": "«Como utilizador regular de frete marítimo consolidado, saúdo a constância da qualidade do serviço e a precisão dos estados online.»",
+  "auth7": "Grossista de bens de equipamento",
+  "rev8": "«Plataforma moderna e intuitiva. O módulo do código de rastreio nunca falha e adapta-se na perfeição ao meu smartphone.»",
+  "auth8": "Consultora de logística",
+  "qSel": "Modo de transporte...",
+  "qAir": "Frete aéreo expresso",
+  "qSea": "Frete marítimo",
+  "qRoad": "Transporte rodoviário europeu",
+  "qDep": "Cidade/País de partida",
+  "qDest": "Cidade/País de destino",
+  "qWt": "Peso estimado (kg)",
+  "quoteOk": "O seu pedido de orçamento foi enviado com sucesso. Um consultor irá contactá-lo em breve.",
+  "quoteErr": "Erro ao enviar o pedido. Tente novamente.",
+  "fserv1": "Frete marítimo",
+  "fserv2": "Frete aéreo",
+  "fserv3": "Logística e armazenamento",
+  "fserv4": "Despacho aduaneiro",
+  "fcomp1": "Certificações ISO 9001",
+  "fcomp2": "Estatuto OEA",
+  "fcomp3": "Avisos legais",
+  "fcomp4": "Política de privacidade",
+  "chatNeed": "Preencha o seu nome e a sua mensagem.",
+  "chatOk": "Mensagem enviada com sucesso! Responderemos em breve.",
+  "chatErr": "Erro ao enviar a mensagem. Verifique a sua ligação.",
+  "chatBtn": "Abrir o chat em direto",
+  "langBtn": "Mudar de idioma",
+  "prev": "Avaliações anteriores",
+  "next": "Avaliações seguintes",
+  "menu": "Menu"
+ },
+ "nl": {
+  "title": "Vanguard Freight & Logistics | Internationaal Transport & Expreszendingen",
+  "subLog": "Internationale Logistiek",
+  "navServ": "Diensten",
+  "navRev": "Reviews",
+  "navQuote": "Snelle Offerte",
+  "navTheme": "Donker / Licht",
+  "modTitle": "Kies de taal",
+  "heroBadge": "Realtime volgen van vloot en vracht actief",
+  "heroTitle": "Wereldwijd veilige routering van goederen en strategische vracht",
+  "heroSub": "Wereldwijde logistieke operator gespecialiseerd in zee-, lucht- en wegtransport. Complete afhandeling van douane en supply chain.",
+  "tabTrack": "Een pakket volgen",
+  "tabEst": "Een schatting aanvragen",
+  "trackPlace": "Voer uw trackingnummer in (Bijv: TRK-7700)",
+  "btnSearch": "Zoeken",
+  "errText": "Onjuist trackingnummer. Controleer uw code.",
+  "stat1": "Bediende landen",
+  "stat2": "Douanenaleving",
+  "stat3": "Traceerbaarheid van de vloot",
+  "stat4": "Zakelijke klanten",
+  "card1Title": "Luchtvracht & Express",
+  "card1Desc": "Gegarandeerde levertijden op de belangrijkste internationale routes met voorrangsafhandeling bij de douane.",
+  "card2Title": "Zeevracht (FCL/LCL)",
+  "card2Desc": "Volledige afhandeling van complete containers en samengestelde lading naar meer dan 180 havens wereldwijd.",
+  "card3Title": "Douanemakelaardij",
+  "card3Desc": "Geïntegreerde afhandeling van aangiften en regelgeving door onze erkende expediteurs.",
+  "revH": "Gecertificeerde ervaringen & getuigenissen",
+  "revP": "Veeg naar links om alle klantbeoordelingen te ontdekken",
+  "quoteH": "Directe offerteaanvraag",
+  "quoteP": "Ontvang een tarief op maat voor uw zakelijke zendingen.",
+  "quoteBtn": "Pro-tarief aanvragen",
+  "footDesc": "Marktleider in supply chain management en internationaal vrachttransport.",
+  "footServH": "Diensten",
+  "footCompH": "Naleving",
+  "copy": "© 2026 Vanguard Freight & Logistics. Alle rechten voorbehouden.",
+  "chatTitle": "Klantenservice - Vanguard",
+  "chatWelcome": "Hallo! Hoe kunnen wij u helpen met uw vracht of zendingen? Laat ons een bericht achter.",
+  "chatName": "Uw naam...",
+  "chatMsg": "Uw bericht...",
+  "chatSend": "Bericht versturen",
+  "langSearch": "Zoek een taal...",
+  "btnChecking": "Controleren...",
+  "errEmpty": "Voer een geldig trackingnummer in.",
+  "errNotFound": "Het trackingnummer “{0}” is onjuist of niet gevonden. Controleer uw code.",
+  "errServer": "De server is onbereikbaar. Probeer het opnieuw.",
+  "rev1": "“Zeer duidelijke en nauwkeurige tracking. Mijn leverancier gaf mij mijn verzendcode en ik kon de aankomst van de goederen zonder problemen volgen.”",
+  "auth1": "Importeur van elektronica",
+  "rev2": "“Uitstekende traceerbaarheid. Ik ontving mijn zendingen met strenge en zeer professionele statuscontroles.”",
+  "auth2": "Inkoopdirecteur",
+  "rev3": "“Strakke, hoogwaardige interface. Een zeer goede totaalservice om de transportfasen te volgen.”",
+  "auth3": "Internationaal inkoopster",
+  "rev4": "“Betrouwbaar en transparant. De orderbevestiging onder vrachtbrief geeft meteen vertrouwen.”",
+  "auth4": "Internationaal handelaar",
+  "rev5": "“Onberispelijke ondersteuning bij onze douaneformaliteiten. Geen stress, de goederen kwamen precies op tijd aan.”",
+  "auth5": "Industrieel ondernemer",
+  "rev6": "“De klantenservice antwoordt direct via de ingebouwde chat. Een enorme meerwaarde om onze eigen eindklanten gerust te stellen.”",
+  "auth6": "E-commerce manager",
+  "rev7": "“Als vaste gebruiker van gegroepeerd zeetransport waardeer ik de constante servicekwaliteit en de nauwkeurigheid van de online statussen.”",
+  "auth7": "Groothandelaar in kapitaalgoederen",
+  "rev8": "“Modern en intuïtief platform. De trackingcodemodule geeft nooit problemen en past perfect op mijn smartphone.”",
+  "auth8": "Logistiek consultant",
+  "qSel": "Transportwijze...",
+  "qAir": "Express-luchtvracht",
+  "qSea": "Zeevracht",
+  "qRoad": "Europees wegtransport",
+  "qDep": "Vertrekplaats/-land",
+  "qDest": "Bestemming (plaats/land)",
+  "qWt": "Geschat gewicht (kg)",
+  "quoteOk": "Uw offerteaanvraag is succesvol verzonden. Een adviseur neemt binnenkort contact met u op.",
+  "quoteErr": "Fout bij het verzenden van de aanvraag. Probeer het opnieuw.",
+  "fserv1": "Zeevracht",
+  "fserv2": "Luchtvracht",
+  "fserv3": "Logistiek & opslag",
+  "fserv4": "Douanemakelaardij",
+  "fcomp1": "ISO 9001-certificeringen",
+  "fcomp2": "AEO-status",
+  "fcomp3": "Juridische kennisgeving",
+  "fcomp4": "Privacybeleid",
+  "chatNeed": "Vul uw naam en uw bericht in.",
+  "chatOk": "Bericht succesvol verzonden! Wij antwoorden binnenkort.",
+  "chatErr": "Fout bij het verzenden van het bericht. Controleer uw verbinding.",
+  "chatBtn": "Open de livechat",
+  "langBtn": "Taal wijzigen",
+  "prev": "Vorige reviews",
+  "next": "Volgende reviews",
+  "menu": "Menu"
+ },
+ "pl": {
+  "title": "Vanguard Freight & Logistics | Transport Międzynarodowy i Przesyłki Ekspresowe",
+  "subLog": "Logistyka Międzynarodowa",
+  "navServ": "Usługi",
+  "navRev": "Opinie",
+  "navQuote": "Szybka Wycena",
+  "navTheme": "Tryb Ciemny / Jasny",
+  "modTitle": "Wybierz język",
+  "heroBadge": "Śledzenie floty i ładunków w czasie rzeczywistym aktywne",
+  "heroTitle": "Bezpieczny globalny transport towarów i ładunków strategicznych",
+  "heroSub": "Globalny operator logistyczny specjalizujący się w transporcie morskim, lotniczym i drogowym. Kompleksowa obsługa celna i łańcucha dostaw.",
+  "tabTrack": "Śledź przesyłkę",
+  "tabEst": "Uzyskaj wycenę",
+  "trackPlace": "Wpisz numer przesyłki (np. TRK-7700)",
+  "btnSearch": "Szukaj",
+  "errText": "Nieprawidłowy numer przesyłki. Sprawdź swój kod.",
+  "stat1": "Obsługiwane kraje",
+  "stat2": "Zgodność celna",
+  "stat3": "Identyfikowalność floty",
+  "stat4": "Klienci biznesowi",
+  "card1Title": "Fracht lotniczy i Express",
+  "card1Desc": "Gwarantowane terminy na głównych trasach międzynarodowych z priorytetową odprawą celną.",
+  "card2Title": "Transport morski (FCL/LCL)",
+  "card2Desc": "Pełna obsługa kontenerów całych i drobnicy do ponad 180 portów na świecie.",
+  "card3Title": "Agencja celna",
+  "card3Desc": "Zintegrowana obsługa zgłoszeń i zgodności z przepisami przez naszych licencjonowanych spedytorów.",
+  "revH": "Certyfikowane doświadczenia i opinie",
+  "revP": "Przesuń w lewo, aby zobaczyć wszystkie opinie naszych klientów",
+  "quoteH": "Natychmiastowe zapytanie o wycenę",
+  "quoteP": "Uzyskaj ofertę szytą na miarę dla swoich przesyłek biznesowych.",
+  "quoteBtn": "Poproś o stawkę Pro",
+  "footDesc": "Lider w zarządzaniu łańcuchem dostaw i międzynarodowym transporcie towarów.",
+  "footServH": "Usługi",
+  "footCompH": "Zgodność",
+  "copy": "© 2026 Vanguard Freight & Logistics. Wszelkie prawa zastrzeżone.",
+  "chatTitle": "Obsługa klienta - Vanguard",
+  "chatWelcome": "Dzień dobry! W czym możemy pomóc w sprawie Twojego ładunku lub przesyłek? Zostaw nam wiadomość.",
+  "chatName": "Twoje imię...",
+  "chatMsg": "Twoja wiadomość...",
+  "chatSend": "Wyślij wiadomość",
+  "langSearch": "Szukaj języka...",
+  "btnChecking": "Sprawdzanie...",
+  "errEmpty": "Wpisz prawidłowy numer przesyłki.",
+  "errNotFound": "Numer przesyłki „{0}” jest nieprawidłowy lub nie został znaleziony. Sprawdź swój kod.",
+  "errServer": "Nie można połączyć się z serwerem. Spróbuj ponownie.",
+  "rev1": "„Bardzo jasne i dokładne śledzenie. Dostawca przesłał mi kod przesyłki i bez problemu śledziłem dotarcie towaru.”",
+  "auth1": "Importerka elektroniki",
+  "rev2": "„Doskonała identyfikowalność. Otrzymałem przesyłki z rygorystyczną i bardzo profesjonalną kontrolą statusów.”",
+  "auth2": "Dyrektor ds. zakupów",
+  "rev3": "„Czysty, wysokiej klasy interfejs. Bardzo dobra obsługa przy śledzeniu etapów transportu.”",
+  "auth3": "Kupująca międzynarodowa",
+  "rev4": "„Rzetelnie i przejrzyście. Potwierdzenie zamówienia na liście przewozowym od razu budzi zaufanie.”",
+  "auth4": "Międzynarodowy trader",
+  "rev5": "„Bezbłędne wsparcie w formalnościach celnych. Zero stresu, towar dotarł dokładnie na czas.”",
+  "auth5": "Przedsiębiorca przemysłowy",
+  "rev6": "„Obsługa klienta odpowiada natychmiast przez wbudowany czat. To ogromny plus, który uspokaja naszych klientów końcowych.”",
+  "auth6": "Kierowniczka e-commerce",
+  "rev7": "„Jako stały użytkownik skonsolidowanego frachtu morskiego doceniam stałą jakość usług i dokładność statusów online.”",
+  "auth7": "Hurtownik dóbr inwestycyjnych",
+  "rev8": "„Nowoczesna i intuicyjna platforma. Moduł kodu śledzenia nigdy się nie zawiesza i świetnie działa na moim smartfonie.”",
+  "auth8": "Konsultantka logistyczna",
+  "qSel": "Rodzaj transportu...",
+  "qAir": "Fracht lotniczy ekspresowy",
+  "qSea": "Fracht morski",
+  "qRoad": "Europejski transport drogowy",
+  "qDep": "Miasto/kraj wyjazdu",
+  "qDest": "Miasto/kraj docelowy",
+  "qWt": "Szacowana waga (kg)",
+  "quoteOk": "Twoje zapytanie o wycenę zostało wysłane. Doradca skontaktuje się z Tobą wkrótce.",
+  "quoteErr": "Błąd podczas wysyłania zapytania. Spróbuj ponownie.",
+  "fserv1": "Fracht morski",
+  "fserv2": "Fracht lotniczy",
+  "fserv3": "Logistyka i magazynowanie",
+  "fserv4": "Agencja celna",
+  "fcomp1": "Certyfikaty ISO 9001",
+  "fcomp2": "Status AEO",
+  "fcomp3": "Informacje prawne",
+  "fcomp4": "Polityka prywatności",
+  "chatNeed": "Podaj swoje imię i wiadomość.",
+  "chatOk": "Wiadomość wysłana! Wkrótce odpowiemy.",
+  "chatErr": "Błąd podczas wysyłania wiadomości. Sprawdź połączenie.",
+  "chatBtn": "Otwórz czat na żywo",
+  "langBtn": "Zmień język",
+  "prev": "Poprzednie opinie",
+  "next": "Następne opinie",
+  "menu": "Menu"
+ },
+ "ru": {
+  "title": "Vanguard Freight & Logistics | Международные перевозки и экспресс-доставка",
+  "subLog": "Международная логистика",
+  "navServ": "Услуги",
+  "navRev": "Отзывы",
+  "navQuote": "Быстрый расчёт",
+  "navTheme": "Тёмный / Светлый режим",
+  "modTitle": "Выберите язык",
+  "heroBadge": "Отслеживание флота и грузов в реальном времени активно",
+  "heroTitle": "Безопасная доставка товаров и стратегических грузов по всему миру",
+  "heroSub": "Глобальный логистический оператор: морские, авиационные и автомобильные перевозки. Полное сопровождение таможни и цепочки поставок.",
+  "tabTrack": "Отследить посылку",
+  "tabEst": "Получить оценку",
+  "trackPlace": "Введите номер отслеживания (напр.: TRK-7700)",
+  "btnSearch": "Найти",
+  "errText": "Неверный номер отслеживания. Проверьте ваш код.",
+  "stat1": "Страны обслуживания",
+  "stat2": "Таможенное соответствие",
+  "stat3": "Прослеживаемость флота",
+  "stat4": "Корпоративные клиенты",
+  "card1Title": "Авиаперевозки и экспресс",
+  "card1Desc": "Гарантированные сроки на основных международных направлениях с приоритетным таможенным оформлением.",
+  "card2Title": "Морские перевозки (FCL/LCL)",
+  "card2Desc": "Полное сопровождение контейнерных и сборных грузов в более чем 180 портов мира.",
+  "card3Title": "Таможенное брокерство",
+  "card3Desc": "Комплексное оформление деклараций и соблюдение требований нашими лицензированными экспедиторами.",
+  "revH": "Подтверждённый опыт и отзывы",
+  "revP": "Проведите влево, чтобы увидеть все отзывы наших клиентов",
+  "quoteH": "Мгновенный запрос расчёта",
+  "quoteP": "Получите индивидуальный тариф для ваших коммерческих отправлений.",
+  "quoteBtn": "Запросить Pro-тариф",
+  "footDesc": "Лидер в управлении цепочками поставок и международных грузоперевозках.",
+  "footServH": "Услуги",
+  "footCompH": "Соответствие",
+  "copy": "© 2026 Vanguard Freight & Logistics. Все права защищены.",
+  "chatTitle": "Служба поддержки - Vanguard",
+  "chatWelcome": "Здравствуйте! Чем мы можем помочь с вашим грузом или отправлениями? Оставьте нам сообщение.",
+  "chatName": "Ваше имя...",
+  "chatMsg": "Ваше сообщение...",
+  "chatSend": "Отправить сообщение",
+  "langSearch": "Найти язык...",
+  "btnChecking": "Проверка...",
+  "errEmpty": "Введите корректный номер отслеживания.",
+  "errNotFound": "Номер отслеживания «{0}» неверен или не найден. Проверьте ваш код.",
+  "errServer": "Не удаётся связаться с сервером. Повторите попытку.",
+  "rev1": "«Очень чёткое и точное отслеживание. Поставщик передал мне код отправления, и я без проблем следил за прибытием товара.»",
+  "auth1": "Импортёр электроники",
+  "rev2": "«Отличная прослеживаемость. Я получил отправления со строгим и очень профессиональным контролем статусов.»",
+  "auth2": "Директор по закупкам",
+  "rev3": "«Чистый интерфейс премиум-класса. Очень хороший сервис для отслеживания этапов перевозки.»",
+  "auth3": "Международный покупатель",
+  "rev4": "«Надёжно и прозрачно. Подтверждение заказа по транспортной накладной сразу вызывает доверие.»",
+  "auth4": "Международный трейдер",
+  "rev5": "«Безупречная поддержка по таможенным формальностям. Никакого стресса, груз прибыл точно в срок.»",
+  "auth5": "Промышленный предприниматель",
+  "rev6": "«Служба поддержки отвечает мгновенно через встроенный чат. Огромный плюс, чтобы успокаивать наших конечных клиентов.»",
+  "auth6": "Руководитель e-commerce",
+  "rev7": "«Как постоянный пользователь сборных морских перевозок, ценю стабильное качество сервиса и точность онлайн-статусов.»",
+  "auth7": "Оптовик инвестиционных товаров",
+  "rev8": "«Современная и интуитивная платформа. Модуль кода отслеживания никогда не сбоит и отлично работает на моём смартфоне.»",
+  "auth8": "Консультант по логистике",
+  "qSel": "Вид транспорта...",
+  "qAir": "Экспресс-авиаперевозка",
+  "qSea": "Морская перевозка",
+  "qRoad": "Европейские автоперевозки",
+  "qDep": "Город/страна отправления",
+  "qDest": "Город/страна назначения",
+  "qWt": "Ориентировочный вес (кг)",
+  "quoteOk": "Ваш запрос на расчёт успешно отправлен. Консультант свяжется с вами в ближайшее время.",
+  "quoteErr": "Ошибка при отправке запроса. Повторите попытку.",
+  "fserv1": "Морские перевозки",
+  "fserv2": "Авиаперевозки",
+  "fserv3": "Логистика и хранение",
+  "fserv4": "Таможенное брокерство",
+  "fcomp1": "Сертификаты ISO 9001",
+  "fcomp2": "Статус AEO",
+  "fcomp3": "Правовая информация",
+  "fcomp4": "Политика конфиденциальности",
+  "chatNeed": "Укажите ваше имя и сообщение.",
+  "chatOk": "Сообщение отправлено! Мы скоро ответим.",
+  "chatErr": "Ошибка при отправке сообщения. Проверьте подключение.",
+  "chatBtn": "Открыть онлайн-чат",
+  "langBtn": "Сменить язык",
+  "prev": "Предыдущие отзывы",
+  "next": "Следующие отзывы",
+  "menu": "Меню"
+ },
+ "zh": {
+  "title": "Vanguard Freight & Logistics | 国际运输与快递货运",
+  "subLog": "国际物流",
+  "navServ": "服务",
+  "navRev": "客户评价",
+  "navQuote": "快速报价",
+  "navTheme": "深色 / 浅色模式",
+  "modTitle": "选择语言",
+  "heroBadge": "车队与货物实时追踪已启用",
+  "heroTitle": "安全的全球货物及战略货运路线规划",
+  "heroSub": "专注于海运、空运和公路运输的全球物流运营商。全面管理报关与供应链。",
+  "tabTrack": "追踪包裹",
+  "tabEst": "获取报价估算",
+  "trackPlace": "输入您的追踪号码（例如：TRK-7700）",
+  "btnSearch": "搜索",
+  "errText": "追踪号码不正确，请检查您的单号。",
+  "stat1": "服务国家",
+  "stat2": "海关合规",
+  "stat3": "车队可追溯性",
+  "stat4": "企业客户",
+  "card1Title": "空运与快递",
+  "card1Desc": "主要国际航线时效有保障，并提供优先清关。",
+  "card2Title": "海运（整箱/拼箱）",
+  "card2Desc": "全程管理整箱与拼箱货物，通达全球 180 多个港口。",
+  "card3Title": "报关代理",
+  "card3Desc": "由我们的持牌货代集中办理申报并确保合规。",
+  "revH": "认证体验与客户评价",
+  "revP": "向左滑动查看我们客户的全部评价",
+  "quoteH": "即时询价",
+  "quoteP": "为您的商业货运获取量身定制的报价。",
+  "quoteBtn": "申请专业报价",
+  "footDesc": "供应链管理与国际货运领域的领导者。",
+  "footServH": "服务",
+  "footCompH": "合规",
+  "copy": "© 2026 Vanguard Freight & Logistics. 保留所有权利。",
+  "chatTitle": "客户服务 - Vanguard",
+  "chatWelcome": "您好！关于您的货物或运输，我们能为您做些什么？请给我们留言。",
+  "chatName": "您的姓名...",
+  "chatMsg": "您的留言...",
+  "chatSend": "发送留言",
+  "langSearch": "搜索语言...",
+  "btnChecking": "正在验证...",
+  "errEmpty": "请输入有效的追踪号码。",
+  "errNotFound": "追踪号码“{0}”不正确或未找到，请检查您的单号。",
+  "errServer": "无法连接服务器，请重试。",
+  "rev1": "“追踪非常清晰准确。供应商给了我发货单号，我可以顺利跟踪货物到达。”",
+  "auth1": "电子产品进口商",
+  "rev2": "“出色的可追溯性。我收到的货物状态核查严谨且非常专业。”",
+  "auth2": "采购总监",
+  "rev3": "“界面简洁、高端。整体服务很好，便于跟踪运输各环节。”",
+  "auth3": "国际采购商",
+  "rev4": "“可靠且透明。凭运单确认订单，让人立刻放心。”",
+  "auth4": "国际贸易商",
+  "rev5": "“报关手续支持无可挑剔。毫无压力，货物准时送达。”",
+  "auth5": "工业企业家",
+  "rev6": "“客服通过内置聊天即时回复，对安抚我们自己的终端客户帮助极大。”",
+  "auth6": "电商负责人",
+  "rev7": "“作为拼箱海运的长期用户，我很欣赏服务质量的稳定以及在线状态的准确。”",
+  "auth7": "资本货物批发商",
+  "rev8": "“现代、直观的平台。追踪码模块从不出错，在我的手机上显示完美。”",
+  "auth8": "物流顾问",
+  "qSel": "运输方式...",
+  "qAir": "快递空运",
+  "qSea": "海运",
+  "qRoad": "欧洲公路运输",
+  "qDep": "出发城市/国家",
+  "qDest": "目的城市/国家",
+  "qWt": "预估重量（公斤）",
+  "quoteOk": "您的询价已成功提交，顾问将很快与您联系。",
+  "quoteErr": "发送请求时出错，请重试。",
+  "fserv1": "海运",
+  "fserv2": "空运",
+  "fserv3": "物流与仓储",
+  "fserv4": "报关代理",
+  "fcomp1": "ISO 9001 认证",
+  "fcomp2": "AEO 资质",
+  "fcomp3": "法律声明",
+  "fcomp4": "隐私政策",
+  "chatNeed": "请填写您的姓名和留言。",
+  "chatOk": "留言发送成功！我们会尽快回复。",
+  "chatErr": "发送留言时出错，请检查您的网络连接。",
+  "chatBtn": "打开在线聊天",
+  "langBtn": "切换语言",
+  "prev": "上一条评价",
+  "next": "下一条评价",
+  "menu": "菜单"
+ },
+ "ar": {
+  "title": "Vanguard Freight & Logistics | النقل الدولي والشحن السريع",
+  "subLog": "الخدمات اللوجستية الدولية",
+  "navServ": "الخدمات",
+  "navRev": "آراء العملاء",
+  "navQuote": "عرض سعر سريع",
+  "navTheme": "الوضع الداكن / الفاتح",
+  "modTitle": "اختر اللغة",
+  "heroBadge": "تتبّع الأسطول والشحنات في الوقت الفعلي مفعّل",
+  "heroTitle": "توجيه عالمي آمن للبضائع والشحنات الاستراتيجية",
+  "heroSub": "مشغّل لوجستي عالمي متخصص في النقل البحري والجوي والبري. إدارة شاملة للجمارك وسلسلة الإمداد.",
+  "tabTrack": "تتبّع طردك",
+  "tabEst": "احصل على تقدير",
+  "trackPlace": "أدخل رقم التتبع (مثال: TRK-7700)",
+  "btnSearch": "بحث",
+  "errText": "رقم التتبع غير صحيح. يرجى التحقق من الرمز.",
+  "stat1": "دول الخدمة",
+  "stat2": "الامتثال الجمركي",
+  "stat3": "إمكانية تتبّع الأسطول",
+  "stat4": "عملاء الشركات",
+  "card1Title": "الشحن الجوي والسريع",
+  "card1Desc": "مواعيد مضمونة على أهم الخطوط الدولية مع تخليص جمركي ذي أولوية.",
+  "card2Title": "النقل البحري (حاوية كاملة/مجمّعة)",
+  "card2Desc": "إدارة كاملة للحاويات الكاملة والشحن المجمّع إلى أكثر من 180 ميناءً حول العالم.",
+  "card3Title": "التخليص الجمركي",
+  "card3Desc": "إدارة متكاملة للإقرارات والامتثال التنظيمي عبر وكلائنا المعتمدين.",
+  "revH": "تجارب موثّقة وشهادات العملاء",
+  "revP": "مرّر إلى اليسار لاكتشاف جميع آراء عملائنا",
+  "quoteH": "طلب عرض سعر فوري",
+  "quoteP": "احصل على تسعيرة مخصصة لشحناتك التجارية.",
+  "quoteBtn": "اطلب تسعيرة احترافية",
+  "footDesc": "رائد في إدارة سلسلة الإمداد والنقل الدولي للبضائع.",
+  "footServH": "الخدمات",
+  "footCompH": "الامتثال",
+  "copy": "© 2026 Vanguard Freight & Logistics. جميع الحقوق محفوظة.",
+  "chatTitle": "خدمة العملاء - Vanguard",
+  "chatWelcome": "مرحباً! كيف يمكننا مساعدتك بخصوص بضائعك أو شحناتك؟ اترك لنا رسالة.",
+  "chatName": "اسمك...",
+  "chatMsg": "رسالتك...",
+  "chatSend": "إرسال الرسالة",
+  "langSearch": "ابحث عن لغة...",
+  "btnChecking": "جارٍ التحقق...",
+  "errEmpty": "يرجى إدخال رقم تتبع صالح.",
+  "errNotFound": "رقم التتبع «{0}» غير صحيح أو غير موجود. يرجى التحقق من الرمز.",
+  "errServer": "تعذّر الاتصال بالخادم. يرجى المحاولة مرة أخرى.",
+  "rev1": "«تتبّع واضح ودقيق جداً. أرسل لي المورّد رمز الشحن وتمكنت من متابعة وصول البضائع دون أي مشكلة.»",
+  "auth1": "مستوردة إلكترونيات",
+  "rev2": "«قابلية تتبع ممتازة. استلمت شحناتي مع مراقبة صارمة ومهنية جداً للحالات.»",
+  "auth2": "مدير المشتريات",
+  "rev3": "«واجهة أنيقة وراقية. خدمة شاملة ممتازة لمتابعة مراحل النقل.»",
+  "auth3": "مشترية دولية",
+  "rev4": "«موثوق وشفاف. تأكيد الطلب بموجب بوليصة الشحن يمنح ثقة فورية.»",
+  "auth4": "تاجر دولي",
+  "rev5": "«دعم لا تشوبه شائبة في إجراءاتنا الجمركية. دون أي توتر، وصلت البضائع في موعدها تماماً.»",
+  "auth5": "رجل أعمال صناعي",
+  "rev6": "«يرد دعم العملاء فوراً عبر الدردشة المدمجة. ميزة كبيرة لطمأنة عملائنا النهائيين.»",
+  "auth6": "مديرة التجارة الإلكترونية",
+  "rev7": "«بصفتي مستخدماً دائماً للشحن البحري المجمّع، أقدّر ثبات جودة الخدمة ودقة الحالات عبر الإنترنت.»",
+  "auth7": "تاجر جملة للسلع الرأسمالية",
+  "rev8": "«منصة حديثة وبديهية. وحدة رمز التتبع لا تتعطل أبداً وتناسب هاتفي تماماً.»",
+  "auth8": "مستشارة لوجستية",
+  "qSel": "وسيلة النقل...",
+  "qAir": "الشحن الجوي السريع",
+  "qSea": "الشحن البحري",
+  "qRoad": "النقل البري الأوروبي",
+  "qDep": "مدينة/دولة المغادرة",
+  "qDest": "مدينة/دولة الوصول",
+  "qWt": "الوزن التقديري (كغ)",
+  "quoteOk": "تم إرسال طلب عرض السعر بنجاح. سيتواصل معك مستشار قريباً.",
+  "quoteErr": "حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.",
+  "fserv1": "الشحن البحري",
+  "fserv2": "الشحن الجوي",
+  "fserv3": "الخدمات اللوجستية والتخزين",
+  "fserv4": "التخليص الجمركي",
+  "fcomp1": "شهادات ISO 9001",
+  "fcomp2": "صفة المشغّل الاقتصادي المعتمد",
+  "fcomp3": "إشعار قانوني",
+  "fcomp4": "سياسة الخصوصية",
+  "chatNeed": "يرجى إدخال اسمك ورسالتك.",
+  "chatOk": "تم إرسال الرسالة بنجاح! سنرد عليك قريباً.",
+  "chatErr": "حدث خطأ أثناء إرسال الرسالة. يرجى التحقق من اتصالك.",
+  "chatBtn": "افتح الدردشة المباشرة",
+  "langBtn": "تغيير اللغة",
+  "prev": "الآراء السابقة",
+  "next": "الآراء التالية",
+  "menu": "القائمة"
+ },
+ "de": {
+  "langSearch": "Sprache suchen...",
+  "btnChecking": "Überprüfung...",
+  "errEmpty": "Bitte geben Sie eine gültige Sendungsnummer ein.",
+  "errNotFound": "Die Sendungsnummer „{0}“ ist falsch oder wurde nicht gefunden. Bitte prüfen Sie Ihren Code.",
+  "errServer": "Server nicht erreichbar. Bitte versuchen Sie es erneut.",
+  "rev1": "„Sehr klare und präzise Sendungsverfolgung. Mein Lieferant hat mir meinen Versandcode übermittelt, und ich konnte die Ankunft der Ware problemlos verfolgen.“",
+  "auth1": "Elektronik-Importeurin",
+  "rev2": "„Hervorragende Rückverfolgbarkeit. Ich habe meine Sendungen mit strenger und sehr professioneller Statuskontrolle erhalten.“",
+  "auth2": "Einkaufsleiter",
+  "rev3": "„Klare, hochwertige Oberfläche. Ein sehr guter Gesamtservice zur Verfolgung der Transportschritte.“",
+  "auth3": "Internationale Einkäuferin",
+  "rev4": "„Zuverlässig und transparent. Die Auftragsbestätigung mit Frachtbrief schafft sofort Vertrauen.“",
+  "auth4": "Internationaler Händler",
+  "rev5": "„Tadelloser Support bei unseren Zollformalitäten. Null Stress, die Ware kam pünktlich an.“",
+  "auth5": "Industrieunternehmer",
+  "rev6": "„Der Kundensupport antwortet sofort über den integrierten Chat. Ein großer Pluspunkt, um unsere eigenen Endkunden zu beruhigen.“",
+  "auth6": "E-Commerce-Leiterin",
+  "rev7": "„Als regelmäßiger Nutzer von Seefracht-Sammelladungen schätze ich die gleichbleibende Servicequalität und die Genauigkeit der Online-Status.“",
+  "auth7": "Investitionsgüter-Großhändler",
+  "rev8": "„Moderne und intuitive Plattform. Das Tracking-Code-Modul funktioniert immer und passt perfekt auf mein Smartphone.“",
+  "auth8": "Logistikberaterin",
+  "qSel": "Transportart...",
+  "qAir": "Express-Luftfracht",
+  "qSea": "Seefracht",
+  "qRoad": "Europäischer Straßentransport",
+  "qDep": "Abgangsort/-land",
+  "qDest": "Zielort/-land",
+  "qWt": "Geschätztes Gewicht (kg)",
+  "quoteOk": "Ihre Angebotsanfrage wurde erfolgreich gesendet. Ein Berater wird sich in Kürze bei Ihnen melden.",
+  "quoteErr": "Fehler beim Senden der Anfrage. Bitte versuchen Sie es erneut.",
+  "fserv1": "Seefracht",
+  "fserv2": "Luftfracht",
+  "fserv3": "Logistik & Lagerung",
+  "fserv4": "Zollabwicklung",
+  "fcomp1": "ISO-9001-Zertifizierungen",
+  "fcomp2": "AEO-Status",
+  "fcomp3": "Impressum",
+  "fcomp4": "Datenschutzerklärung",
+  "chatNeed": "Bitte geben Sie Ihren Namen und Ihre Nachricht ein.",
+  "chatOk": "Nachricht erfolgreich gesendet! Wir antworten in Kürze.",
+  "chatErr": "Fehler beim Senden der Nachricht. Bitte prüfen Sie Ihre Verbindung.",
+  "chatBtn": "Live-Chat öffnen",
+  "langBtn": "Sprache ändern",
+  "prev": "Vorherige Bewertungen",
+  "next": "Nächste Bewertungen",
+  "menu": "Menü"
+ },
+ "es": {
+  "langSearch": "Buscar un idioma...",
+  "btnChecking": "Verificando...",
+  "errEmpty": "Introduzca un número de seguimiento válido.",
+  "errNotFound": "El número de seguimiento «{0}» es incorrecto o no se ha encontrado. Compruebe su código.",
+  "errServer": "No se puede contactar con el servidor. Inténtelo de nuevo.",
+  "rev1": "«Seguimiento muy claro y preciso. Mi proveedor me envió mi código de envío y pude seguir la llegada de la mercancía sin ningún problema.»",
+  "auth1": "Importadora de electrónica",
+  "rev2": "«Excelente trazabilidad. Recibí mis envíos con un control de estados riguroso y muy profesional.»",
+  "auth2": "Director de compras",
+  "rev3": "«Interfaz limpia y de alta gama. Muy buen servicio global para seguir las etapas del transporte.»",
+  "auth3": "Compradora internacional",
+  "rev4": "«Fiable y transparente. La confirmación del pedido con carta de porte genera confianza inmediata.»",
+  "auth4": "Trader internacional",
+  "rev5": "«Soporte impecable en nuestros trámites aduaneros. Cero estrés, la mercancía llegó justo a tiempo.»",
+  "auth5": "Empresario industrial",
+  "rev6": "«El soporte al cliente responde al instante mediante el chat integrado. Una gran ventaja para tranquilizar a nuestros propios clientes finales.»",
+  "auth6": "Responsable de comercio electrónico",
+  "rev7": "«Como usuario habitual de flete marítimo consolidado, valoro la constancia en la calidad del servicio y la precisión de los estados en línea.»",
+  "auth7": "Mayorista de bienes de equipo",
+  "rev8": "«Plataforma moderna e intuitiva. El módulo del código de seguimiento nunca falla y se adapta perfectamente a mi smartphone.»",
+  "auth8": "Consultora logística",
+  "qSel": "Modo de transporte...",
+  "qAir": "Flete aéreo exprés",
+  "qSea": "Flete marítimo",
+  "qRoad": "Transporte por carretera europeo",
+  "qDep": "Ciudad/País de salida",
+  "qDest": "Ciudad/País de destino",
+  "qWt": "Peso estimado (kg)",
+  "quoteOk": "Su solicitud de presupuesto se ha enviado correctamente. Un asesor se pondrá en contacto con usted en breve.",
+  "quoteErr": "Error al enviar la solicitud. Inténtelo de nuevo.",
+  "fserv1": "Flete marítimo",
+  "fserv2": "Flete aéreo",
+  "fserv3": "Logística y almacenamiento",
+  "fserv4": "Agencia de aduanas",
+  "fcomp1": "Certificaciones ISO 9001",
+  "fcomp2": "Estatus OEA",
+  "fcomp3": "Aviso legal",
+  "fcomp4": "Política de privacidad",
+  "chatNeed": "Rellene su nombre y su mensaje.",
+  "chatOk": "¡Mensaje enviado con éxito! Le responderemos en breve.",
+  "chatErr": "Error al enviar el mensaje. Compruebe su conexión.",
+  "chatBtn": "Abrir el chat en directo",
+  "langBtn": "Cambiar de idioma",
+  "prev": "Opiniones anteriores",
+  "next": "Opiniones siguientes",
+  "menu": "Menú"
+ }
+};
+        Object.keys(TR_FULL).forEach(function (k) { translations[k] = Object.assign(translations[k] || {}, TR_FULL[k]); });
+        // Dictionnaires des 9 langues ajoutées (ja, ko, hi, tr, vi, id, sv, uk, ro)
+        const TR_EXTRA = {
+ "ja": {
+  "title": "Vanguard Freight & Logistics | 国際輸送・エクスプレス貨物",
+  "subLog": "国際ロジスティクス",
+  "navServ": "サービス",
+  "navRev": "お客様の声",
+  "navQuote": "クイック見積もり",
+  "navTheme": "ダーク／ライトモード",
+  "modTitle": "言語を選択",
+  "heroBadge": "リアルタイムの船隊・貨物追跡を提供中",
+  "heroTitle": "世界規模で安全に届ける貨物輸送と戦略的フレイト",
+  "heroSub": "海上・航空・陸上輸送に特化したグローバル物流オペレーター。通関とサプライチェーンを一括管理します。",
+  "tabTrack": "荷物を追跡",
+  "tabEst": "見積もりを取得",
+  "trackPlace": "追跡番号を入力（例：TRK-7700）",
+  "btnSearch": "検索",
+  "errText": "追跡番号が正しくありません。コードをご確認ください。",
+  "stat1": "対応国",
+  "stat2": "通関コンプライアンス",
+  "stat3": "船隊トレーサビリティ",
+  "stat4": "法人のお客様",
+  "card1Title": "航空貨物・エクスプレス",
+  "card1Desc": "主要国際ルートで輸送時間を保証し、優先通関を行います。",
+  "card2Title": "海上輸送（FCL/LCL）",
+  "card2Desc": "世界180以上の港へのフルコンテナと混載を一括管理します。",
+  "card3Title": "通関代行",
+  "card3Desc": "認定通関士が申告と法令遵守を一括して管理します。",
+  "revH": "認定された体験とお客様の声",
+  "revP": "左にスワイプして、お客様のレビューをすべてご覧ください",
+  "quoteH": "即時見積もり依頼",
+  "quoteP": "法人向け貨物のカスタム料金をご案内します。",
+  "quoteBtn": "法人料金を依頼",
+  "footDesc": "サプライチェーン管理と国際貨物輸送のリーダー。",
+  "footServH": "サービス",
+  "footCompH": "コンプライアンス",
+  "copy": "© 2026 Vanguard Freight & Logistics. 無断転載を禁じます。",
+  "chatTitle": "カスタマーサービス - Vanguard",
+  "chatWelcome": "こんにちは！貨物や荷物に関するご用件をお聞かせください。メッセージをお残しください。",
+  "chatName": "お名前...",
+  "chatMsg": "メッセージ...",
+  "chatSend": "メッセージを送信",
+  "langSearch": "言語を検索...",
+  "btnChecking": "確認中...",
+  "errEmpty": "有効な追跡番号を入力してください。",
+  "errNotFound": "追跡番号「{0}」が正しくないか、見つかりませんでした。コードをご確認ください。",
+  "errServer": "サーバーに接続できません。もう一度お試しください。",
+  "rev1": "「追跡が非常に明確で正確でした。サプライヤーから送られた発送コードで、荷物が到着するまで問題なく追跡できました。」",
+  "auth1": "電子機器輸入業者",
+  "rev2": "「素晴らしいトレーサビリティです。厳密でとてもプロフェッショナルなステータス確認のもと、荷物を受け取りました。」",
+  "auth2": "購買部長",
+  "rev3": "「洗練された高級感のあるインターフェース。輸送の各段階を追うのにとても良いサービスです。」",
+  "auth3": "海外バイヤー",
+  "rev4": "「信頼でき、透明性があります。送り状に基づく注文確認で、すぐに安心できます。」",
+  "auth4": "国際トレーダー",
+  "rev5": "「通関手続きを完璧にサポートしてくれました。ストレスなく、荷物は予定通りに届きました。」",
+  "auth5": "産業系起業家",
+  "rev6": "「内蔵チャットですぐに回答してくれます。私たちのエンドユーザーを安心させる大きな強みです。」",
+  "auth6": "ECマネージャー",
+  "rev7": "「混載海上輸送を定期的に利用していますが、安定したサービス品質とオンライン状況の正確さを評価しています。」",
+  "auth7": "資本財卸売業者",
+  "rev8": "「モダンで直感的なプラットフォーム。追跡コードのモジュールは不具合がなく、スマートフォンにぴったりです。」",
+  "auth8": "物流コンサルタント",
+  "qSel": "輸送手段...",
+  "qAir": "エクスプレス航空貨物",
+  "qSea": "海上貨物",
+  "qRoad": "欧州陸上輸送",
+  "qDep": "出発都市／国",
+  "qDest": "到着都市／国",
+  "qWt": "推定重量（kg）",
+  "quoteOk": "見積もり依頼を送信しました。担当者がまもなくご連絡します。",
+  "quoteErr": "依頼の送信中にエラーが発生しました。もう一度お試しください。",
+  "fserv1": "海上貨物",
+  "fserv2": "航空貨物",
+  "fserv3": "物流・保管",
+  "fserv4": "通関代行",
+  "fcomp1": "ISO 9001認証",
+  "fcomp2": "AEOステータス",
+  "fcomp3": "法的通知",
+  "fcomp4": "プライバシーポリシー",
+  "chatNeed": "お名前とメッセージを入力してください。",
+  "chatOk": "メッセージを送信しました！まもなく返信します。",
+  "chatErr": "メッセージの送信中にエラーが発生しました。接続をご確認ください。",
+  "chatBtn": "ライブチャットを開く",
+  "langBtn": "言語を変更",
+  "prev": "前のレビュー",
+  "next": "次のレビュー",
+  "menu": "メニュー"
+ },
+ "ko": {
+  "title": "Vanguard Freight & Logistics | 국제 운송 및 특급 화물",
+  "subLog": "국제 물류",
+  "navServ": "서비스",
+  "navRev": "고객 후기",
+  "navQuote": "빠른 견적",
+  "navTheme": "다크 / 라이트 모드",
+  "modTitle": "언어 선택",
+  "heroBadge": "실시간 선단 및 화물 추적 운영 중",
+  "heroTitle": "전 세계로 안전하게 보내는 화물 운송과 전략 물류",
+  "heroSub": "해상, 항공, 육상 운송을 전문으로 하는 글로벌 물류 운영사. 통관과 공급망을 통합 관리합니다.",
+  "tabTrack": "화물 추적",
+  "tabEst": "견적 받기",
+  "trackPlace": "추적 번호를 입력하세요 (예: TRK-7700)",
+  "btnSearch": "검색",
+  "errText": "추적 번호가 올바르지 않습니다. 코드를 확인해 주세요.",
+  "stat1": "서비스 국가",
+  "stat2": "통관 규정 준수",
+  "stat3": "선단 추적성",
+  "stat4": "기업 고객",
+  "card1Title": "항공 화물 및 특송",
+  "card1Desc": "주요 국제 노선에서 보장된 운송 시간과 우선 통관을 제공합니다.",
+  "card2Title": "해상 운송 (FCL/LCL)",
+  "card2Desc": "전 세계 180개 이상의 항구로 향하는 풀 컨테이너와 혼적을 통합 관리합니다.",
+  "card3Title": "통관 대행",
+  "card3Desc": "공인 관세사가 신고와 규정 준수를 통합 관리합니다.",
+  "revH": "검증된 경험과 고객 후기",
+  "revP": "왼쪽으로 스와이프하여 고객들의 모든 후기를 확인하세요",
+  "quoteH": "즉시 견적 요청",
+  "quoteP": "기업 화물에 맞는 맞춤 요금을 받아보세요.",
+  "quoteBtn": "기업 요금 요청",
+  "footDesc": "공급망 관리와 국제 화물 운송의 선두 주자.",
+  "footServH": "서비스",
+  "footCompH": "규정 준수",
+  "copy": "© 2026 Vanguard Freight & Logistics. 모든 권리 보유.",
+  "chatTitle": "고객 서비스 - Vanguard",
+  "chatWelcome": "안녕하세요! 화물이나 배송에 대해 무엇을 도와드릴까요? 메시지를 남겨 주세요.",
+  "chatName": "이름...",
+  "chatMsg": "메시지...",
+  "chatSend": "메시지 보내기",
+  "langSearch": "언어 검색...",
+  "btnChecking": "확인 중...",
+  "errEmpty": "유효한 추적 번호를 입력해 주세요.",
+  "errNotFound": "추적 번호 \"{0}\"가 올바르지 않거나 찾을 수 없습니다. 코드를 확인해 주세요.",
+  "errServer": "서버에 연결할 수 없습니다. 다시 시도해 주세요.",
+  "rev1": "\"추적이 매우 명확하고 정확했습니다. 공급업체가 보내준 운송 코드로 도착할 때까지 문제없이 화물을 따라갈 수 있었습니다.\"",
+  "auth1": "전자제품 수입업자",
+  "rev2": "\"뛰어난 추적성입니다. 엄격하고 매우 전문적인 상태 확인과 함께 화물을 받았습니다.\"",
+  "auth2": "구매 이사",
+  "rev3": "\"깔끔하고 고급스러운 인터페이스입니다. 운송의 모든 단계를 확인하기에 아주 좋은 서비스입니다.\"",
+  "auth3": "해외 바이어",
+  "rev4": "\"믿을 수 있고 투명합니다. 운송장에 따른 주문 확인으로 바로 안심이 됩니다.\"",
+  "auth4": "국제 무역업자",
+  "rev5": "\"통관 절차를 완벽하게 지원해 주었습니다. 스트레스 없이 화물이 제때 도착했습니다.\"",
+  "auth5": "산업 분야 기업가",
+  "rev6": "\"내장된 채팅으로 즉시 답변해 줍니다. 저희 최종 고객을 안심시키는 데 큰 장점입니다.\"",
+  "auth6": "이커머스 매니저",
+  "rev7": "\"혼적 해상 운송을 정기적으로 이용하는데, 일관된 서비스 품질과 온라인 상태 정보의 정확성이 마음에 듭니다.\"",
+  "auth7": "자본재 도매업자",
+  "rev8": "\"현대적이고 직관적인 플랫폼입니다. 추적 코드 모듈은 오류가 없고 스마트폰에 딱 맞습니다.\"",
+  "auth8": "물류 컨설턴트",
+  "qSel": "운송 방식...",
+  "qAir": "특송 항공 화물",
+  "qSea": "해상 화물",
+  "qRoad": "유럽 육상 운송",
+  "qDep": "출발 도시/국가",
+  "qDest": "도착 도시/국가",
+  "qWt": "예상 중량 (kg)",
+  "quoteOk": "견적 요청이 접수되었습니다. 담당자가 곧 연락드리겠습니다.",
+  "quoteErr": "요청을 보내는 중 오류가 발생했습니다. 다시 시도해 주세요.",
+  "fserv1": "해상 화물",
+  "fserv2": "항공 화물",
+  "fserv3": "물류 및 보관",
+  "fserv4": "통관 대행",
+  "fcomp1": "ISO 9001 인증",
+  "fcomp2": "AEO 인증",
+  "fcomp3": "법적 고지",
+  "fcomp4": "개인정보 처리방침",
+  "chatNeed": "이름과 메시지를 입력해 주세요.",
+  "chatOk": "메시지가 전송되었습니다! 곧 답변드리겠습니다.",
+  "chatErr": "메시지를 보내는 중 오류가 발생했습니다. 연결을 확인해 주세요.",
+  "chatBtn": "실시간 채팅 열기",
+  "langBtn": "언어 변경",
+  "prev": "이전 후기",
+  "next": "다음 후기",
+  "menu": "메뉴"
+ },
+ "hi": {
+  "title": "Vanguard Freight & Logistics | अंतरराष्ट्रीय परिवहन और एक्सप्रेस फ्रेट",
+  "subLog": "अंतरराष्ट्रीय लॉजिस्टिक्स",
+  "navServ": "सेवाएँ",
+  "navRev": "ग्राहक समीक्षाएँ",
+  "navQuote": "एक्सप्रेस कोटेशन",
+  "navTheme": "डार्क / लाइट मोड",
+  "modTitle": "भाषा चुनें",
+  "heroBadge": "रियल-टाइम फ्लीट और फ्रेट ट्रैकिंग सक्रिय",
+  "heroTitle": "माल और रणनीतिक फ्रेट की सुरक्षित वैश्विक ढुलाई",
+  "heroSub": "समुद्री, हवाई और सड़क फ्रेट में विशेषज्ञ वैश्विक लॉजिस्टिक्स ऑपरेटर। कस्टम्स और सप्लाई चेन का संपूर्ण प्रबंधन।",
+  "tabTrack": "शिपमेंट ट्रैक करें",
+  "tabEst": "अनुमान प्राप्त करें",
+  "trackPlace": "अपना ट्रैकिंग नंबर दर्ज करें (उदा: TRK-7700)",
+  "btnSearch": "खोजें",
+  "errText": "ट्रैकिंग नंबर गलत है। कृपया अपना कोड जाँचें।",
+  "stat1": "सेवा वाले देश",
+  "stat2": "कस्टम्स अनुपालन",
+  "stat3": "फ्लीट ट्रेसबिलिटी",
+  "stat4": "कॉर्पोरेट ग्राहक",
+  "card1Title": "एयर फ्रेट और एक्सप्रेस",
+  "card1Desc": "प्रमुख अंतरराष्ट्रीय मार्गों पर गारंटीशुदा ट्रांज़िट समय और प्राथमिकता कस्टम्स क्लियरेंस।",
+  "card2Title": "समुद्री परिवहन (FCL/LCL)",
+  "card2Desc": "दुनिया के 180 से अधिक बंदरगाहों तक पूरे कंटेनर और कंसोलिडेशन का संपूर्ण प्रबंधन।",
+  "card3Title": "कस्टम्स ब्रोकरेज",
+  "card3Desc": "हमारे प्रमाणित ब्रोकरों द्वारा घोषणाओं और नियामक अनुपालन का एकीकृत प्रबंधन।",
+  "revH": "प्रमाणित अनुभव और प्रशंसापत्र",
+  "revP": "हमारे ग्राहकों की सभी प्रतिक्रियाएँ और समीक्षाएँ देखने के लिए बाईं ओर स्वाइप करें",
+  "quoteH": "तुरंत कोटेशन का अनुरोध करें",
+  "quoteP": "अपने व्यावसायिक शिपमेंट के लिए अनुकूलित दरें प्राप्त करें।",
+  "quoteBtn": "प्रो दर का अनुरोध करें",
+  "footDesc": "सप्लाई चेन प्रबंधन और अंतरराष्ट्रीय माल परिवहन में अग्रणी।",
+  "footServH": "सेवाएँ",
+  "footCompH": "अनुपालन",
+  "copy": "© 2026 Vanguard Freight & Logistics. सर्वाधिकार सुरक्षित।",
+  "chatTitle": "ग्राहक सेवा - Vanguard",
+  "chatWelcome": "नमस्ते! आपके फ्रेट या शिपमेंट के बारे में हम कैसे मदद कर सकते हैं? हमें संदेश छोड़ें।",
+  "chatName": "आपका नाम...",
+  "chatMsg": "आपका संदेश...",
+  "chatSend": "संदेश भेजें",
+  "langSearch": "भाषा खोजें...",
+  "btnChecking": "जाँच हो रही है...",
+  "errEmpty": "कृपया मान्य ट्रैकिंग नंबर दर्ज करें।",
+  "errNotFound": "ट्रैकिंग नंबर \"{0}\" गलत है या नहीं मिला। कृपया अपना कोड जाँचें।",
+  "errServer": "सर्वर से संपर्क नहीं हो पा रहा। कृपया पुनः प्रयास करें।",
+  "rev1": "\"बहुत स्पष्ट और सटीक ट्रैकिंग। मेरे सप्लायर ने शिपिंग कोड भेजा और मैंने बिना किसी समस्या के माल को पहुँचने तक ट्रैक किया।\"",
+  "auth1": "इलेक्ट्रॉनिक्स आयातक",
+  "rev2": "\"उत्कृष्ट ट्रेसबिलिटी। मुझे कड़ी और बेहद पेशेवर स्टेटस जाँच के साथ मेरी खेप मिली।\"",
+  "auth2": "खरीद निदेशक",
+  "rev3": "\"साफ़-सुथरा, उच्च स्तरीय इंटरफ़ेस। परिवहन के हर चरण को देखने के लिए बहुत अच्छी सेवा।\"",
+  "auth3": "अंतरराष्ट्रीय खरीदार",
+  "rev4": "\"भरोसेमंद और पारदर्शी। वेबिल के तहत ऑर्डर की पुष्टि से तुरंत विश्वास मिलता है।\"",
+  "auth4": "अंतरराष्ट्रीय व्यापारी",
+  "rev5": "\"हमारी कस्टम्स औपचारिकताओं में बेहतरीन सहयोग। कोई तनाव नहीं, माल ठीक समय पर पहुँचा।\"",
+  "auth5": "औद्योगिक उद्यमी",
+  "rev6": "\"इन-बिल्ट चैट से ग्राहक सहायता तुरंत जवाब देती है। हमारे अपने ग्राहकों को आश्वस्त करने में बड़ी मदद।\"",
+  "auth6": "ई-कॉमर्स प्रबंधक",
+  "rev7": "\"संयुक्त समुद्री फ्रेट के नियमित उपयोगकर्ता के रूप में, मुझे सेवा की एकसमान गुणवत्ता और ऑनलाइन स्टेटस की सटीकता पसंद है।\"",
+  "auth7": "पूँजीगत माल थोक विक्रेता",
+  "rev8": "\"आधुनिक, सहज प्लेटफ़ॉर्म। ट्रैकिंग कोड मॉड्यूल में कभी गड़बड़ी नहीं होती और यह मेरे स्मार्टफ़ोन पर बिल्कुल फिट बैठता है।\"",
+  "auth8": "लॉजिस्टिक्स सलाहकार",
+  "qSel": "परिवहन का तरीका...",
+  "qAir": "एक्सप्रेस एयर फ्रेट",
+  "qSea": "समुद्री फ्रेट",
+  "qRoad": "यूरोपीय सड़क परिवहन",
+  "qDep": "प्रस्थान शहर/देश",
+  "qDest": "गंतव्य शहर/देश",
+  "qWt": "अनुमानित वज़न (किग्रा)",
+  "quoteOk": "आपका कोटेशन अनुरोध सफलतापूर्वक भेज दिया गया है। एक सलाहकार जल्द ही आपसे संपर्क करेगा।",
+  "quoteErr": "अनुरोध भेजते समय त्रुटि हुई। कृपया पुनः प्रयास करें।",
+  "fserv1": "समुद्री फ्रेट",
+  "fserv2": "एयर फ्रेट",
+  "fserv3": "लॉजिस्टिक्स और भंडारण",
+  "fserv4": "कस्टम्स ब्रोकरेज",
+  "fcomp1": "ISO 9001 प्रमाणपत्र",
+  "fcomp2": "AEO स्थिति",
+  "fcomp3": "कानूनी सूचना",
+  "fcomp4": "गोपनीयता नीति",
+  "chatNeed": "कृपया अपना नाम और संदेश भरें।",
+  "chatOk": "संदेश सफलतापूर्वक भेज दिया गया! हम जल्द उत्तर देंगे।",
+  "chatErr": "संदेश भेजते समय त्रुटि हुई। कृपया अपना कनेक्शन जाँचें।",
+  "chatBtn": "लाइव चैट खोलें",
+  "langBtn": "भाषा बदलें",
+  "prev": "पिछली समीक्षाएँ",
+  "next": "अगली समीक्षाएँ",
+  "menu": "मेनू"
+ },
+ "tr": {
+  "title": "Vanguard Freight & Logistics | Uluslararası Taşımacılık ve Ekspres Kargo",
+  "subLog": "Uluslararası Lojistik",
+  "navServ": "Hizmetler",
+  "navRev": "Müşteri Yorumları",
+  "navQuote": "Hızlı Teklif",
+  "navTheme": "Koyu / Açık Mod",
+  "modTitle": "Dil Seçin",
+  "heroBadge": "Gerçek Zamanlı Filo ve Kargo Takibi Aktif",
+  "heroTitle": "Eşyaların ve Stratejik Yüklerin Güvenli Küresel Taşınması",
+  "heroSub": "Deniz, hava ve kara taşımacılığında uzmanlaşmış küresel lojistik operatörü. Gümrük ve tedarik zinciri yönetiminin tamamı.",
+  "tabTrack": "Gönderi Takip Et",
+  "tabEst": "Fiyat Teklifi Al",
+  "trackPlace": "Takip numaranızı girin (Örn: TRK-7700)",
+  "btnSearch": "Ara",
+  "errText": "Takip numarası hatalı. Lütfen kodunuzu kontrol edin.",
+  "stat1": "Hizmet Verilen Ülke",
+  "stat2": "Gümrük Uyumluluğu",
+  "stat3": "Filo İzlenebilirliği",
+  "stat4": "Kurumsal Müşteri",
+  "card1Title": "Hava Kargo ve Ekspres",
+  "card1Desc": "Başlıca uluslararası hatlarda garantili transit süreleri ve öncelikli gümrük işlemleri.",
+  "card2Title": "Deniz Taşımacılığı (FCL/LCL)",
+  "card2Desc": "Dünya genelinde 180'den fazla limana tam konteyner ve parsiyel yüklerin eksiksiz yönetimi.",
+  "card3Title": "Gümrük Müşavirliği",
+  "card3Desc": "Beyannamelerin ve mevzuata uyumun sertifikalı müşavirlerimizce bütünleşik yönetimi.",
+  "revH": "Onaylı Deneyimler ve Görüşler",
+  "revP": "Müşterilerimizin tüm geri bildirimlerini ve yorumlarını görmek için sola kaydırın",
+  "quoteH": "Anında Teklif Talebi",
+  "quoteP": "Ticari gönderileriniz için size özel fiyatlandırma alın.",
+  "quoteBtn": "Kurumsal Fiyat İste",
+  "footDesc": "Tedarik zinciri yönetimi ve uluslararası yük taşımacılığında lider.",
+  "footServH": "Hizmetler",
+  "footCompH": "Uyumluluk",
+  "copy": "© 2026 Vanguard Freight & Logistics. Tüm hakları saklıdır.",
+  "chatTitle": "Müşteri Hizmetleri - Vanguard",
+  "chatWelcome": "Merhaba! Yükleriniz veya gönderileriniz konusunda size nasıl yardımcı olabiliriz? Bize bir mesaj bırakın.",
+  "chatName": "Adınız...",
+  "chatMsg": "Mesajınız...",
+  "chatSend": "Mesaj Gönder",
+  "langSearch": "Dil ara...",
+  "btnChecking": "Kontrol ediliyor...",
+  "errEmpty": "Lütfen geçerli bir takip numarası girin.",
+  "errNotFound": "\"{0}\" takip numarası hatalı veya bulunamadı. Lütfen kodunuzu kontrol edin.",
+  "errServer": "Sunucuya ulaşılamıyor. Lütfen tekrar deneyin.",
+  "rev1": "\"Çok net ve hassas bir takip. Tedarikçim gönderi kodumu iletti ve malları varışa kadar sorunsuz takip ettim.\"",
+  "auth1": "Elektronik İthalatçısı",
+  "rev2": "\"Mükemmel izlenebilirlik. Gönderilerimi titiz ve çok profesyonel durum kontrolleriyle teslim aldım.\"",
+  "auth2": "Satın Alma Direktörü",
+  "rev3": "\"Temiz, üst düzey bir arayüz. Taşımanın her adımını izlemek için genel olarak çok iyi bir hizmet.\"",
+  "auth3": "Uluslararası Alıcı",
+  "rev4": "\"Güvenilir ve şeffaf. Konşimento kapsamındaki sipariş onayı anında güven veriyor.\"",
+  "auth4": "Uluslararası Tüccar",
+  "rev5": "\"Gümrük işlemlerimizde kusursuz destek. Sıfır stres, mallar tam zamanında ulaştı.\"",
+  "auth5": "Sanayi Girişimcisi",
+  "rev6": "\"Müşteri desteği yerleşik sohbet üzerinden anında yanıt veriyor. Kendi son müşterilerimizi rahatlatmak için büyük artı.\"",
+  "auth6": "E-ticaret Müdürü",
+  "rev7": "\"Parsiyel deniz taşımacılığının düzenli bir kullanıcısı olarak, tutarlı hizmet kalitesini ve çevrimiçi durumların doğruluğunu takdir ediyorum.\"",
+  "auth7": "Sermaye Malları Toptancısı",
+  "rev8": "\"Modern, sezgisel bir platform. Takip kodu modülü hiç takılmıyor ve akıllı telefonuma mükemmel uyuyor.\"",
+  "auth8": "Lojistik Danışmanı",
+  "qSel": "Taşıma türü...",
+  "qAir": "Ekspres Hava Kargo",
+  "qSea": "Deniz Kargo",
+  "qRoad": "Avrupa Karayolu Taşımacılığı",
+  "qDep": "Çıkış şehri/ülkesi",
+  "qDest": "Varış şehri/ülkesi",
+  "qWt": "Tahmini ağırlık (kg)",
+  "quoteOk": "Teklif talebiniz başarıyla gönderildi. Bir danışman en kısa sürede sizinle iletişime geçecek.",
+  "quoteErr": "Talep gönderilirken hata oluştu. Lütfen tekrar deneyin.",
+  "fserv1": "Deniz Kargo",
+  "fserv2": "Hava Kargo",
+  "fserv3": "Lojistik ve Depolama",
+  "fserv4": "Gümrük Müşavirliği",
+  "fcomp1": "ISO 9001 Sertifikaları",
+  "fcomp2": "AEO Statüsü",
+  "fcomp3": "Yasal Bildirim",
+  "fcomp4": "Gizlilik Politikası",
+  "chatNeed": "Lütfen adınızı ve mesajınızı doldurun.",
+  "chatOk": "Mesaj başarıyla gönderildi! En kısa sürede yanıt vereceğiz.",
+  "chatErr": "Mesaj gönderilirken hata oluştu. Lütfen bağlantınızı kontrol edin.",
+  "chatBtn": "Canlı sohbeti aç",
+  "langBtn": "Dili değiştir",
+  "prev": "Önceki yorumlar",
+  "next": "Sonraki yorumlar",
+  "menu": "Menü"
+ },
+ "vi": {
+  "title": "Vanguard Freight & Logistics | Vận tải Quốc tế & Hàng hóa Chuyển phát Nhanh",
+  "subLog": "Logistics Quốc tế",
+  "navServ": "Dịch vụ",
+  "navRev": "Đánh giá khách hàng",
+  "navQuote": "Báo giá nhanh",
+  "navTheme": "Chế độ Tối / Sáng",
+  "modTitle": "Chọn ngôn ngữ",
+  "heroBadge": "Đang theo dõi đội tàu và hàng hóa theo thời gian thực",
+  "heroTitle": "Vận chuyển toàn cầu an toàn cho hàng hóa và hàng chiến lược",
+  "heroSub": "Nhà khai thác logistics toàn cầu chuyên về vận tải đường biển, đường hàng không và đường bộ. Quản lý trọn gói thủ tục hải quan và chuỗi cung ứng.",
+  "tabTrack": "Theo dõi lô hàng",
+  "tabEst": "Nhận báo giá",
+  "trackPlace": "Nhập mã vận đơn của bạn (VD: TRK-7700)",
+  "btnSearch": "Tìm kiếm",
+  "errText": "Mã vận đơn không đúng. Vui lòng kiểm tra lại mã của bạn.",
+  "stat1": "Quốc gia phục vụ",
+  "stat2": "Tuân thủ hải quan",
+  "stat3": "Truy xuất đội xe",
+  "stat4": "Khách hàng doanh nghiệp",
+  "card1Title": "Vận tải hàng không & Chuyển phát nhanh",
+  "card1Desc": "Thời gian vận chuyển được đảm bảo trên các tuyến quốc tế chính, kèm thông quan ưu tiên.",
+  "card2Title": "Vận tải đường biển (FCL/LCL)",
+  "card2Desc": "Quản lý trọn gói container nguyên và hàng ghép đến hơn 180 cảng trên toàn cầu.",
+  "card3Title": "Đại lý hải quan",
+  "card3Desc": "Quản lý tích hợp khai báo và tuân thủ quy định bởi các đại lý được chứng nhận của chúng tôi.",
+  "revH": "Trải nghiệm và nhận xét đã xác thực",
+  "revP": "Vuốt sang trái để xem tất cả phản hồi và đánh giá từ khách hàng của chúng tôi",
+  "quoteH": "Yêu cầu báo giá tức thì",
+  "quoteP": "Nhận mức giá riêng cho các lô hàng chuyên nghiệp của bạn.",
+  "quoteBtn": "Yêu cầu giá doanh nghiệp",
+  "footDesc": "Dẫn đầu về quản lý chuỗi cung ứng và vận tải hàng hóa quốc tế.",
+  "footServH": "Dịch vụ",
+  "footCompH": "Tuân thủ",
+  "copy": "© 2026 Vanguard Freight & Logistics. Bảo lưu mọi quyền.",
+  "chatTitle": "Chăm sóc khách hàng - Vanguard",
+  "chatWelcome": "Xin chào! Chúng tôi có thể giúp gì cho bạn về hàng hóa hoặc lô hàng? Hãy để lại tin nhắn cho chúng tôi.",
+  "chatName": "Tên của bạn...",
+  "chatMsg": "Tin nhắn của bạn...",
+  "chatSend": "Gửi tin nhắn",
+  "langSearch": "Tìm ngôn ngữ...",
+  "btnChecking": "Đang kiểm tra...",
+  "errEmpty": "Vui lòng nhập mã vận đơn hợp lệ.",
+  "errNotFound": "Mã vận đơn \"{0}\" không đúng hoặc không tìm thấy. Vui lòng kiểm tra lại mã của bạn.",
+  "errServer": "Không thể kết nối máy chủ. Vui lòng thử lại.",
+  "rev1": "\"Theo dõi rất rõ ràng và chính xác. Nhà cung cấp gửi cho tôi mã vận chuyển và tôi theo dõi hàng đến tận nơi mà không gặp trở ngại nào.\"",
+  "auth1": "Nhà nhập khẩu điện tử",
+  "rev2": "\"Khả năng truy xuất tuyệt vời. Tôi nhận hàng cùng những lần kiểm tra trạng thái nghiêm túc và rất chuyên nghiệp.\"",
+  "auth2": "Giám đốc mua hàng",
+  "rev3": "\"Giao diện gọn gàng, cao cấp. Một dịch vụ tổng thể rất tốt để theo dõi từng bước vận chuyển.\"",
+  "auth3": "Người mua quốc tế",
+  "rev4": "\"Đáng tin cậy và minh bạch. Xác nhận đơn hàng theo vận đơn mang lại sự yên tâm ngay lập tức.\"",
+  "auth4": "Thương nhân quốc tế",
+  "rev5": "\"Hỗ trợ hoàn hảo cho thủ tục hải quan của chúng tôi. Không căng thẳng, hàng đến đúng hẹn.\"",
+  "auth5": "Doanh nhân công nghiệp",
+  "rev6": "\"Bộ phận hỗ trợ trả lời ngay qua trò chuyện tích hợp. Một điểm cộng lớn để trấn an chính khách hàng cuối của chúng tôi.\"",
+  "auth6": "Quản lý thương mại điện tử",
+  "rev7": "\"Là người thường xuyên dùng vận tải biển hàng ghép, tôi đánh giá cao chất lượng dịch vụ ổn định và độ chính xác của trạng thái trực tuyến.\"",
+  "auth7": "Nhà bán buôn tư liệu sản xuất",
+  "rev8": "\"Nền tảng hiện đại, trực quan. Mô-đun mã theo dõi không bao giờ lỗi và rất vừa với điện thoại của tôi.\"",
+  "auth8": "Tư vấn logistics",
+  "qSel": "Phương thức vận tải...",
+  "qAir": "Hàng không chuyển phát nhanh",
+  "qSea": "Vận tải biển",
+  "qRoad": "Vận tải đường bộ châu Âu",
+  "qDep": "Thành phố/quốc gia đi",
+  "qDest": "Thành phố/quốc gia đến",
+  "qWt": "Trọng lượng ước tính (kg)",
+  "quoteOk": "Yêu cầu báo giá của bạn đã được gửi thành công. Chuyên viên sẽ sớm liên hệ với bạn.",
+  "quoteErr": "Lỗi khi gửi yêu cầu. Vui lòng thử lại.",
+  "fserv1": "Vận tải biển",
+  "fserv2": "Vận tải hàng không",
+  "fserv3": "Logistics & Lưu kho",
+  "fserv4": "Đại lý hải quan",
+  "fcomp1": "Chứng nhận ISO 9001",
+  "fcomp2": "Tình trạng AEO",
+  "fcomp3": "Thông báo pháp lý",
+  "fcomp4": "Chính sách bảo mật",
+  "chatNeed": "Vui lòng điền tên và tin nhắn của bạn.",
+  "chatOk": "Đã gửi tin nhắn thành công! Chúng tôi sẽ trả lời sớm.",
+  "chatErr": "Lỗi khi gửi tin nhắn. Vui lòng kiểm tra kết nối của bạn.",
+  "chatBtn": "Mở trò chuyện trực tiếp",
+  "langBtn": "Đổi ngôn ngữ",
+  "prev": "Đánh giá trước",
+  "next": "Đánh giá tiếp theo",
+  "menu": "Menu"
+ },
+ "id": {
+  "title": "Vanguard Freight & Logistics | Transportasi Internasional & Kargo Ekspres",
+  "subLog": "Logistik Internasional",
+  "navServ": "Layanan",
+  "navRev": "Ulasan Pelanggan",
+  "navQuote": "Penawaran Cepat",
+  "navTheme": "Mode Gelap / Terang",
+  "modTitle": "Pilih Bahasa",
+  "heroBadge": "Pelacakan Armada & Kargo Real-Time Aktif",
+  "heroTitle": "Pengiriman Barang Global yang Aman & Kargo Strategis",
+  "heroSub": "Operator logistik global yang berspesialisasi dalam kargo laut, udara, dan darat. Pengelolaan bea cukai dan rantai pasok yang menyeluruh.",
+  "tabTrack": "Lacak Pengiriman",
+  "tabEst": "Dapatkan Estimasi",
+  "trackPlace": "Masukkan nomor pelacakan Anda (Contoh: TRK-7700)",
+  "btnSearch": "Cari",
+  "errText": "Nomor pelacakan salah. Harap periksa kode Anda.",
+  "stat1": "Negara Terlayani",
+  "stat2": "Kepatuhan Bea Cukai",
+  "stat3": "Ketertelusuran Armada",
+  "stat4": "Klien Korporat",
+  "card1Title": "Kargo Udara & Ekspres",
+  "card1Desc": "Waktu transit terjamin di rute internasional utama dengan pengurusan bea cukai prioritas.",
+  "card2Title": "Transportasi Laut (FCL/LCL)",
+  "card2Desc": "Pengelolaan menyeluruh kontainer penuh dan konsolidasi ke lebih dari 180 pelabuhan dunia.",
+  "card3Title": "Jasa Kepabeanan",
+  "card3Desc": "Pengelolaan terpadu deklarasi dan kepatuhan regulasi oleh pengurus kepabeanan bersertifikat kami.",
+  "revH": "Pengalaman & Testimoni Terverifikasi",
+  "revP": "Geser ke kiri untuk melihat semua umpan balik dan ulasan dari klien kami",
+  "quoteH": "Permintaan Penawaran Instan",
+  "quoteP": "Dapatkan harga khusus untuk pengiriman profesional Anda.",
+  "quoteBtn": "Minta Tarif Pro",
+  "footDesc": "Pemimpin dalam manajemen rantai pasok dan transportasi kargo internasional.",
+  "footServH": "Layanan",
+  "footCompH": "Kepatuhan",
+  "copy": "© 2026 Vanguard Freight & Logistics. Hak cipta dilindungi.",
+  "chatTitle": "Layanan Pelanggan - Vanguard",
+  "chatWelcome": "Halo! Apa yang bisa kami bantu terkait kargo atau pengiriman Anda? Tinggalkan pesan untuk kami.",
+  "chatName": "Nama Anda...",
+  "chatMsg": "Pesan Anda...",
+  "chatSend": "Kirim Pesan",
+  "langSearch": "Cari bahasa...",
+  "btnChecking": "Memeriksa...",
+  "errEmpty": "Harap masukkan nomor pelacakan yang valid.",
+  "errNotFound": "Nomor pelacakan \"{0}\" salah atau tidak ditemukan. Harap periksa kode Anda.",
+  "errServer": "Tidak dapat menghubungi server. Silakan coba lagi.",
+  "rev1": "\"Pelacakan sangat jelas dan akurat. Pemasok saya mengirim kode pengiriman dan saya memantau barang sampai tiba tanpa kendala.\"",
+  "auth1": "Importir Elektronik",
+  "rev2": "\"Ketertelusuran yang sangat baik. Saya menerima kiriman dengan pengecekan status yang ketat dan sangat profesional.\"",
+  "auth2": "Direktur Pembelian",
+  "rev3": "\"Antarmuka bersih dan berkelas. Layanan keseluruhan yang sangat baik untuk mengikuti setiap tahap pengiriman.\"",
+  "auth3": "Pembeli Internasional",
+  "rev4": "\"Andal dan transparan. Konfirmasi pesanan dengan surat muatan langsung memberi rasa percaya.\"",
+  "auth4": "Pedagang Internasional",
+  "rev5": "\"Dukungan sempurna untuk formalitas bea cukai kami. Tanpa stres, barang tiba tepat waktu.\"",
+  "auth5": "Pengusaha Industri",
+  "rev6": "\"Dukungan pelanggan menjawab seketika lewat obrolan bawaan. Nilai tambah besar untuk menenangkan pelanggan akhir kami.\"",
+  "auth6": "Manajer E-commerce",
+  "rev7": "\"Sebagai pengguna tetap kargo laut konsolidasi, saya menghargai kualitas layanan yang konsisten dan keakuratan status daring.\"",
+  "auth7": "Grosir Barang Modal",
+  "rev8": "\"Platform modern dan intuitif. Modul kode pelacakan tidak pernah bermasalah dan pas di smartphone saya.\"",
+  "auth8": "Konsultan Logistik",
+  "qSel": "Moda transportasi...",
+  "qAir": "Kargo Udara Ekspres",
+  "qSea": "Kargo Laut",
+  "qRoad": "Transportasi Darat Eropa",
+  "qDep": "Kota/negara asal",
+  "qDest": "Kota/negara tujuan",
+  "qWt": "Estimasi berat (kg)",
+  "quoteOk": "Permintaan penawaran Anda berhasil dikirim. Seorang penasihat akan segera menghubungi Anda.",
+  "quoteErr": "Terjadi kesalahan saat mengirim permintaan. Silakan coba lagi.",
+  "fserv1": "Kargo Laut",
+  "fserv2": "Kargo Udara",
+  "fserv3": "Logistik & Penyimpanan",
+  "fserv4": "Jasa Kepabeanan",
+  "fcomp1": "Sertifikasi ISO 9001",
+  "fcomp2": "Status AEO",
+  "fcomp3": "Pemberitahuan Hukum",
+  "fcomp4": "Kebijakan Privasi",
+  "chatNeed": "Harap isi nama dan pesan Anda.",
+  "chatOk": "Pesan berhasil dikirim! Kami akan segera membalas.",
+  "chatErr": "Terjadi kesalahan saat mengirim pesan. Harap periksa koneksi Anda.",
+  "chatBtn": "Buka obrolan langsung",
+  "langBtn": "Ganti bahasa",
+  "prev": "Ulasan sebelumnya",
+  "next": "Ulasan berikutnya",
+  "menu": "Menu"
+ },
+ "sv": {
+  "title": "Vanguard Freight & Logistics | Internationell Transport & Expressfrakt",
+  "subLog": "Internationell Logistik",
+  "navServ": "Tjänster",
+  "navRev": "Kundomdömen",
+  "navQuote": "Snabboffert",
+  "navTheme": "Mörkt / Ljust läge",
+  "modTitle": "Välj språk",
+  "heroBadge": "Realtidsspårning av flotta och frakt aktiv",
+  "heroTitle": "Säker global transport av gods och strategisk frakt",
+  "heroSub": "Global logistikoperatör specialiserad på sjö-, flyg- och vägfrakt. Fullständig hantering av tull och leveranskedja.",
+  "tabTrack": "Spåra en försändelse",
+  "tabEst": "Få en uppskattning",
+  "trackPlace": "Ange ditt spårningsnummer (t.ex. TRK-7700)",
+  "btnSearch": "Sök",
+  "errText": "Felaktigt spårningsnummer. Kontrollera din kod.",
+  "stat1": "Länder vi betjänar",
+  "stat2": "Tullefterlevnad",
+  "stat3": "Spårbarhet för flottan",
+  "stat4": "Företagskunder",
+  "card1Title": "Flygfrakt & Express",
+  "card1Desc": "Garanterade transporttider på större internationella rutter med prioriterad tullklarering.",
+  "card2Title": "Sjötransport (FCL/LCL)",
+  "card2Desc": "Fullständig hantering av hela containrar och samlastning till över 180 hamnar världen över.",
+  "card3Title": "Tullförmedling",
+  "card3Desc": "Integrerad hantering av deklarationer och regelefterlevnad av våra certifierade deklaranter.",
+  "revH": "Verifierade erfarenheter & omdömen",
+  "revP": "Svep åt vänster för att se alla synpunkter och omdömen från våra kunder",
+  "quoteH": "Omedelbar offertförfrågan",
+  "quoteP": "Få skräddarsydda priser för dina yrkesmässiga försändelser.",
+  "quoteBtn": "Begär företagspris",
+  "footDesc": "Ledande inom hantering av leveranskedjor och internationell godstransport.",
+  "footServH": "Tjänster",
+  "footCompH": "Efterlevnad",
+  "copy": "© 2026 Vanguard Freight & Logistics. Alla rättigheter förbehållna.",
+  "chatTitle": "Kundtjänst - Vanguard",
+  "chatWelcome": "Hej! Hur kan vi hjälpa dig med din frakt eller dina försändelser? Lämna ett meddelande.",
+  "chatName": "Ditt namn...",
+  "chatMsg": "Ditt meddelande...",
+  "chatSend": "Skicka meddelande",
+  "langSearch": "Sök språk...",
+  "btnChecking": "Kontrollerar...",
+  "errEmpty": "Ange ett giltigt spårningsnummer.",
+  "errNotFound": "Spårningsnumret \"{0}\" är felaktigt eller hittades inte. Kontrollera din kod.",
+  "errServer": "Det går inte att nå servern. Försök igen.",
+  "rev1": "\"Mycket tydlig och exakt spårning. Min leverantör skickade fraktkoden och jag följde godset hela vägen fram utan problem.\"",
+  "auth1": "Elektronikimportör",
+  "rev2": "\"Utmärkt spårbarhet. Jag fick mina försändelser med noggranna, mycket professionella statuskontroller.\"",
+  "auth2": "Inköpsdirektör",
+  "rev3": "\"Ett rent, högkvalitativt gränssnitt. En mycket bra helhetstjänst för att följa varje steg i transporten.\"",
+  "auth3": "Internationell köpare",
+  "rev4": "\"Pålitligt och transparent. Orderbekräftelse under en fraktsedel ger omedelbart förtroende.\"",
+  "auth4": "Internationell handlare",
+  "rev5": "\"Felfritt stöd med våra tullformaliteter. Ingen stress, godset kom precis i tid.\"",
+  "auth5": "Industriföretagare",
+  "rev6": "\"Kundtjänst svarar direkt via den inbyggda chatten. Ett stort plus för att lugna våra egna slutkunder.\"",
+  "auth6": "E-handelschef",
+  "rev7": "\"Som regelbunden användare av samlastad sjöfrakt uppskattar jag den jämna servicekvaliteten och att statusarna online stämmer.\"",
+  "auth7": "Grossist inom kapitalvaror",
+  "rev8": "\"Modern, intuitiv plattform. Modulen för spårningskod krånglar aldrig och passar perfekt i min smartphone.\"",
+  "auth8": "Logistikkonsult",
+  "qSel": "Transportsätt...",
+  "qAir": "Expressflygfrakt",
+  "qSea": "Sjöfrakt",
+  "qRoad": "Europeisk vägtransport",
+  "qDep": "Avgångsstad/-land",
+  "qDest": "Destinationsstad/-land",
+  "qWt": "Uppskattad vikt (kg)",
+  "quoteOk": "Din offertförfrågan har skickats. En rådgivare kontaktar dig inom kort.",
+  "quoteErr": "Fel när förfrågan skulle skickas. Försök igen.",
+  "fserv1": "Sjöfrakt",
+  "fserv2": "Flygfrakt",
+  "fserv3": "Logistik & Lagring",
+  "fserv4": "Tullförmedling",
+  "fcomp1": "ISO 9001-certifieringar",
+  "fcomp2": "AEO-status",
+  "fcomp3": "Juridisk information",
+  "fcomp4": "Integritetspolicy",
+  "chatNeed": "Fyll i ditt namn och ditt meddelande.",
+  "chatOk": "Meddelandet har skickats! Vi svarar inom kort.",
+  "chatErr": "Fel när meddelandet skulle skickas. Kontrollera din anslutning.",
+  "chatBtn": "Öppna livechatt",
+  "langBtn": "Byt språk",
+  "prev": "Föregående omdömen",
+  "next": "Nästa omdömen",
+  "menu": "Meny"
+ },
+ "uk": {
+  "title": "Vanguard Freight & Logistics | Міжнародні перевезення та експрес-доставка вантажів",
+  "subLog": "Міжнародна логістика",
+  "navServ": "Послуги",
+  "navRev": "Відгуки клієнтів",
+  "navQuote": "Швидкий розрахунок",
+  "navTheme": "Темний / Світлий режим",
+  "modTitle": "Оберіть мову",
+  "heroBadge": "Відстеження флоту та вантажів у реальному часі активне",
+  "heroTitle": "Безпечне глобальне перевезення товарів і стратегічних вантажів",
+  "heroSub": "Глобальний логістичний оператор, що спеціалізується на морських, авіаційних і автомобільних перевезеннях. Повне ведення митних процедур і ланцюга поставок.",
+  "tabTrack": "Відстежити відправлення",
+  "tabEst": "Отримати розрахунок",
+  "trackPlace": "Введіть номер відстеження (напр.: TRK-7700)",
+  "btnSearch": "Знайти",
+  "errText": "Неправильний номер відстеження. Перевірте свій код.",
+  "stat1": "Країн обслуговування",
+  "stat2": "Митна відповідність",
+  "stat3": "Простежуваність флоту",
+  "stat4": "Корпоративних клієнтів",
+  "card1Title": "Авіаперевезення та експрес",
+  "card1Desc": "Гарантований час транзиту на основних міжнародних маршрутах із пріоритетним митним оформленням.",
+  "card2Title": "Морські перевезення (FCL/LCL)",
+  "card2Desc": "Повне ведення повних контейнерів і збірних вантажів до понад 180 портів світу.",
+  "card3Title": "Митне брокерство",
+  "card3Desc": "Комплексне ведення декларацій і дотримання норм нашими сертифікованими брокерами.",
+  "revH": "Підтверджений досвід і відгуки",
+  "revP": "Проведіть пальцем ліворуч, щоб побачити всі відгуки наших клієнтів",
+  "quoteH": "Миттєвий запит розрахунку",
+  "quoteP": "Отримайте індивідуальні ціни для ваших професійних відправлень.",
+  "quoteBtn": "Запросити тариф для бізнесу",
+  "footDesc": "Лідер у керуванні ланцюгами поставок і міжнародних вантажних перевезеннях.",
+  "footServH": "Послуги",
+  "footCompH": "Відповідність",
+  "copy": "© 2026 Vanguard Freight & Logistics. Усі права захищено.",
+  "chatTitle": "Служба підтримки - Vanguard",
+  "chatWelcome": "Вітаємо! Чим ми можемо допомогти щодо вашого вантажу чи відправлень? Залиште нам повідомлення.",
+  "chatName": "Ваше ім'я...",
+  "chatMsg": "Ваше повідомлення...",
+  "chatSend": "Надіслати повідомлення",
+  "langSearch": "Пошук мови...",
+  "btnChecking": "Перевірка...",
+  "errEmpty": "Введіть дійсний номер відстеження.",
+  "errNotFound": "Номер відстеження «{0}» неправильний або не знайдений. Перевірте свій код.",
+  "errServer": "Не вдалося зв'язатися із сервером. Спробуйте ще раз.",
+  "rev1": "«Дуже зрозуміле й точне відстеження. Постачальник надіслав код відправлення, і я без проблем стежив за вантажем до прибуття.»",
+  "auth1": "Імпортер електроніки",
+  "rev2": "«Чудова простежуваність. Я отримав відправлення зі суворими й дуже професійними перевірками статусу.»",
+  "auth2": "Директор із закупівель",
+  "rev3": "«Чистий інтерфейс високого класу. Дуже хороший загальний сервіс для відстеження кожного етапу перевезення.»",
+  "auth3": "Міжнародний покупець",
+  "rev4": "«Надійно й прозоро. Підтвердження замовлення за накладною одразу вселяє впевненість.»",
+  "auth4": "Міжнародний трейдер",
+  "rev5": "«Бездоганна підтримка в митних формальностях. Жодного стресу, вантаж прибув вчасно.»",
+  "auth5": "Промисловий підприємець",
+  "rev6": "«Підтримка відповідає миттєво через вбудований чат. Великий плюс, щоб заспокоїти наших власних кінцевих клієнтів.»",
+  "auth6": "Керівник електронної комерції",
+  "rev7": "«Як постійний користувач збірних морських перевезень, я ціную стабільну якість сервісу та точність онлайн-статусів.»",
+  "auth7": "Оптовик капітальних товарів",
+  "rev8": "«Сучасна, інтуїтивна платформа. Модуль коду відстеження ніколи не глючить і ідеально підходить для мого смартфона.»",
+  "auth8": "Логістичний консультант",
+  "qSel": "Вид транспорту...",
+  "qAir": "Експрес-авіаперевезення",
+  "qSea": "Морські перевезення",
+  "qRoad": "Європейські автоперевезення",
+  "qDep": "Місто/країна відправлення",
+  "qDest": "Місто/країна призначення",
+  "qWt": "Орієнтовна вага (кг)",
+  "quoteOk": "Ваш запит на розрахунок успішно надіслано. Консультант невдовзі зв'яжеться з вами.",
+  "quoteErr": "Помилка під час надсилання запиту. Спробуйте ще раз.",
+  "fserv1": "Морські перевезення",
+  "fserv2": "Авіаперевезення",
+  "fserv3": "Логістика та зберігання",
+  "fserv4": "Митне брокерство",
+  "fcomp1": "Сертифікати ISO 9001",
+  "fcomp2": "Статус AEO",
+  "fcomp3": "Правова інформація",
+  "fcomp4": "Політика конфіденційності",
+  "chatNeed": "Будь ласка, заповніть ім'я та повідомлення.",
+  "chatOk": "Повідомлення успішно надіслано! Ми відповімо найближчим часом.",
+  "chatErr": "Помилка під час надсилання повідомлення. Перевірте з'єднання.",
+  "chatBtn": "Відкрити живий чат",
+  "langBtn": "Змінити мову",
+  "prev": "Попередні відгуки",
+  "next": "Наступні відгуки",
+  "menu": "Меню"
+ },
+ "ro": {
+  "title": "Vanguard Freight & Logistics | Transport Internațional și Marfă Expres",
+  "subLog": "Logistică Internațională",
+  "navServ": "Servicii",
+  "navRev": "Recenzii clienți",
+  "navQuote": "Ofertă rapidă",
+  "navTheme": "Mod întunecat / luminos",
+  "modTitle": "Alegeți limba",
+  "heroBadge": "Urmărirea flotei și a mărfii în timp real activă",
+  "heroTitle": "Transport global sigur al mărfurilor și al încărcăturilor strategice",
+  "heroSub": "Operator logistic global specializat în transport maritim, aerian și rutier. Gestionare completă a vămuirii și a lanțului de aprovizionare.",
+  "tabTrack": "Urmărește un colet",
+  "tabEst": "Cere o estimare",
+  "trackPlace": "Introduceți numărul de urmărire (Ex: TRK-7700)",
+  "btnSearch": "Caută",
+  "errText": "Număr de urmărire incorect. Verificați codul.",
+  "stat1": "Țări deservite",
+  "stat2": "Conformitate vamală",
+  "stat3": "Trasabilitatea flotei",
+  "stat4": "Clienți corporate",
+  "card1Title": "Transport aerian și expres",
+  "card1Desc": "Timpi de tranzit garantați pe principalele rute internaționale, cu vămuire prioritară.",
+  "card2Title": "Transport maritim (FCL/LCL)",
+  "card2Desc": "Gestionare completă a containerelor întregi și a grupajelor către peste 180 de porturi din lume.",
+  "card3Title": "Agenție vamală",
+  "card3Desc": "Gestionarea integrată a declarațiilor și a conformității de către brokerii noștri certificați.",
+  "revH": "Experiențe și mărturii certificate",
+  "revP": "Glisați spre stânga pentru a vedea toate opiniile și recenziile clienților noștri",
+  "quoteH": "Cerere de ofertă instantanee",
+  "quoteP": "Obțineți prețuri personalizate pentru expedierile dvs. profesionale.",
+  "quoteBtn": "Cere tarif Pro",
+  "footDesc": "Lider în managementul lanțului de aprovizionare și în transportul internațional de marfă.",
+  "footServH": "Servicii",
+  "footCompH": "Conformitate",
+  "copy": "© 2026 Vanguard Freight & Logistics. Toate drepturile rezervate.",
+  "chatTitle": "Serviciu clienți - Vanguard",
+  "chatWelcome": "Bună ziua! Cu ce vă putem ajuta în legătură cu marfa sau coletele dvs.? Lăsați-ne un mesaj.",
+  "chatName": "Numele dvs...",
+  "chatMsg": "Mesajul dvs...",
+  "chatSend": "Trimite mesajul",
+  "langSearch": "Caută limba...",
+  "btnChecking": "Se verifică...",
+  "errEmpty": "Introduceți un număr de urmărire valid.",
+  "errNotFound": "Numărul de urmărire „{0}” este incorect sau nu a fost găsit. Verificați codul.",
+  "errServer": "Serverul nu poate fi contactat. Încercați din nou.",
+  "rev1": "„Urmărire foarte clară și precisă. Furnizorul mi-a trimis codul de expediere și am urmărit marfa până la destinație fără probleme.”",
+  "auth1": "Importator de electronice",
+  "rev2": "„Trasabilitate excelentă. Mi-am primit coletele cu verificări de stare riguroase și foarte profesioniste.”",
+  "auth2": "Director de achiziții",
+  "rev3": "„Interfață curată, de top. Un serviciu foarte bun în ansamblu pentru a urmări fiecare etapă a transportului.”",
+  "auth3": "Cumpărător internațional",
+  "rev4": "„Fiabil și transparent. Confirmarea comenzii pe baza scrisorii de transport inspiră încredere imediată.”",
+  "auth4": "Comerciant internațional",
+  "rev5": "„Suport impecabil pentru formalitățile noastre vamale. Zero stres, marfa a ajuns exact la timp.”",
+  "auth5": "Antreprenor industrial",
+  "rev6": "„Suportul răspunde instantaneu prin chatul integrat. Un mare plus pentru a-i liniști pe proprii noștri clienți finali.”",
+  "auth6": "Manager e-commerce",
+  "rev7": "„Ca utilizator constant al transportului maritim în grupaj, apreciez calitatea constantă a serviciului și acuratețea statusurilor online.”",
+  "auth7": "Angrosist de bunuri de capital",
+  "rev8": "„Platformă modernă, intuitivă. Modulul codului de urmărire nu are probleme și se potrivește perfect pe smartphone-ul meu.”",
+  "auth8": "Consultant în logistică",
+  "qSel": "Modul de transport...",
+  "qAir": "Transport aerian expres",
+  "qSea": "Transport maritim",
+  "qRoad": "Transport rutier european",
+  "qDep": "Oraș/țară de plecare",
+  "qDest": "Oraș/țară de destinație",
+  "qWt": "Greutate estimată (kg)",
+  "quoteOk": "Cererea dvs. de ofertă a fost trimisă cu succes. Un consultant vă va contacta în curând.",
+  "quoteErr": "Eroare la trimiterea cererii. Încercați din nou.",
+  "fserv1": "Transport maritim",
+  "fserv2": "Transport aerian",
+  "fserv3": "Logistică și depozitare",
+  "fserv4": "Agenție vamală",
+  "fcomp1": "Certificări ISO 9001",
+  "fcomp2": "Statut AEO",
+  "fcomp3": "Mențiuni legale",
+  "fcomp4": "Politica de confidențialitate",
+  "chatNeed": "Completați numele și mesajul dvs.",
+  "chatOk": "Mesaj trimis cu succes! Vă vom răspunde în curând.",
+  "chatErr": "Eroare la trimiterea mesajului. Verificați conexiunea.",
+  "chatBtn": "Deschide chatul live",
+  "langBtn": "Schimbă limba",
+  "prev": "Recenziile anterioare",
+  "next": "Recenziile următoare",
+  "menu": "Meniu"
+ }
+};
+        Object.keys(TR_EXTRA).forEach(function (k) { translations[k] = Object.assign(translations[k] || {}, TR_EXTRA[k]); });
+        // Chat visiteur et devis : on demande l'adresse email (réponse par email) — textes dans les 20 langues
+        const TR_EMAIL = {
+            "fr": {
+                "chatName": "Votre adresse email...",
+                "chatWelcome": "Bonjour ! Laissez-nous votre adresse email et votre message, nous vous répondrons par email.",
+                "chatNeed": "Veuillez saisir votre adresse email et votre message.",
+                "chatEmailBad": "Veuillez saisir une adresse email valide.",
+                "chatOk": "Message envoyé ! Nous vous répondrons par email.",
+                "qEmail": "Votre adresse email",
+                "quoteOk": "Votre demande de devis a été envoyée. Nous vous répondrons par email."
+            },
+            "en": {
+                "chatName": "Your email address...",
+                "chatWelcome": "Hello! Leave us your email address and your message, we will reply to you by email.",
+                "chatNeed": "Please enter your email address and your message.",
+                "chatEmailBad": "Please enter a valid email address.",
+                "chatOk": "Message sent! We will reply to you by email.",
+                "qEmail": "Your email address",
+                "quoteOk": "Your quote request has been submitted. We will reply to you by email."
+            },
+            "de": {
+                "chatName": "Ihre E-Mail-Adresse...",
+                "chatWelcome": "Hallo! Hinterlassen Sie uns Ihre E-Mail-Adresse und Ihre Nachricht, wir antworten Ihnen per E-Mail.",
+                "chatNeed": "Bitte geben Sie Ihre E-Mail-Adresse und Ihre Nachricht ein.",
+                "chatEmailBad": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+                "chatOk": "Nachricht gesendet! Wir antworten Ihnen per E-Mail.",
+                "qEmail": "Ihre E-Mail-Adresse",
+                "quoteOk": "Ihre Angebotsanfrage wurde gesendet. Wir antworten Ihnen per E-Mail."
+            },
+            "es": {
+                "chatName": "Su correo electrónico...",
+                "chatWelcome": "¡Hola! Déjenos su correo electrónico y su mensaje, le responderemos por correo electrónico.",
+                "chatNeed": "Introduzca su correo electrónico y su mensaje.",
+                "chatEmailBad": "Introduzca un correo electrónico válido.",
+                "chatOk": "¡Mensaje enviado! Le responderemos por correo electrónico.",
+                "qEmail": "Su correo electrónico",
+                "quoteOk": "Su solicitud de presupuesto ha sido enviada. Le responderemos por correo electrónico."
+            },
+            "it": {
+                "chatName": "La tua email...",
+                "chatWelcome": "Buongiorno! Lasciaci la tua email e il tuo messaggio, ti risponderemo via email.",
+                "chatNeed": "Inserisci la tua email e il tuo messaggio.",
+                "chatEmailBad": "Inserisci un indirizzo email valido.",
+                "chatOk": "Messaggio inviato! Ti risponderemo via email.",
+                "qEmail": "La tua email",
+                "quoteOk": "La tua richiesta di preventivo è stata inviata. Ti risponderemo via email."
+            },
+            "zh": {
+                "chatName": "您的电子邮箱...",
+                "chatWelcome": "您好！请留下您的电子邮箱和留言，我们将通过邮件回复您。",
+                "chatNeed": "请填写您的电子邮箱和留言。",
+                "chatEmailBad": "请输入有效的电子邮箱。",
+                "chatOk": "留言已发送！我们将通过邮件回复您。",
+                "qEmail": "您的电子邮箱",
+                "quoteOk": "您的询价已提交，我们将通过邮件回复您。"
+            },
+            "ar": {
+                "chatName": "بريدك الإلكتروني...",
+                "chatWelcome": "مرحباً! اترك لنا بريدك الإلكتروني ورسالتك وسنرد عليك عبر البريد الإلكتروني.",
+                "chatNeed": "يرجى إدخال بريدك الإلكتروني ورسالتك.",
+                "chatEmailBad": "يرجى إدخال بريد إلكتروني صالح.",
+                "chatOk": "تم إرسال الرسالة! سنرد عليك عبر البريد الإلكتروني.",
+                "qEmail": "بريدك الإلكتروني",
+                "quoteOk": "تم إرسال طلب عرض السعر. سنرد عليك عبر البريد الإلكتروني."
+            },
+            "pt": {
+                "chatName": "O seu e-mail...",
+                "chatWelcome": "Olá! Deixe-nos o seu e-mail e a sua mensagem, responderemos por e-mail.",
+                "chatNeed": "Preencha o seu e-mail e a sua mensagem.",
+                "chatEmailBad": "Introduza um e-mail válido.",
+                "chatOk": "Mensagem enviada! Responderemos por e-mail.",
+                "qEmail": "O seu e-mail",
+                "quoteOk": "O seu pedido de orçamento foi enviado. Responderemos por e-mail."
+            },
+            "nl": {
+                "chatName": "Uw e-mailadres...",
+                "chatWelcome": "Hallo! Laat ons uw e-mailadres en uw bericht achter, wij antwoorden u per e-mail.",
+                "chatNeed": "Vul uw e-mailadres en uw bericht in.",
+                "chatEmailBad": "Vul een geldig e-mailadres in.",
+                "chatOk": "Bericht verzonden! Wij antwoorden u per e-mail.",
+                "qEmail": "Uw e-mailadres",
+                "quoteOk": "Uw offerteaanvraag is verzonden. Wij antwoorden u per e-mail."
+            },
+            "ru": {
+                "chatName": "Ваш адрес электронной почты...",
+                "chatWelcome": "Здравствуйте! Оставьте нам свой адрес электронной почты и сообщение, мы ответим вам по электронной почте.",
+                "chatNeed": "Укажите адрес электронной почты и сообщение.",
+                "chatEmailBad": "Укажите корректный адрес электронной почты.",
+                "chatOk": "Сообщение отправлено! Мы ответим вам по электронной почте.",
+                "qEmail": "Ваш адрес электронной почты",
+                "quoteOk": "Ваш запрос на расчёт отправлен. Мы ответим вам по электронной почте."
+            },
+            "pl": {
+                "chatName": "Twój adres e-mail...",
+                "chatWelcome": "Dzień dobry! Zostaw nam swój adres e-mail i wiadomość, odpowiemy e-mailem.",
+                "chatNeed": "Podaj swój adres e-mail i wiadomość.",
+                "chatEmailBad": "Podaj prawidłowy adres e-mail.",
+                "chatOk": "Wiadomość wysłana! Odpowiemy e-mailem.",
+                "qEmail": "Twój adres e-mail",
+                "quoteOk": "Twoje zapytanie o wycenę zostało wysłane. Odpowiemy e-mailem."
+            },
+            "ja": {
+                "chatName": "メールアドレス...",
+                "chatWelcome": "こんにちは！メールアドレスとメッセージをお送りください。メールでご返信いたします。",
+                "chatNeed": "メールアドレスとメッセージを入力してください。",
+                "chatEmailBad": "有効なメールアドレスを入力してください。",
+                "chatOk": "メッセージを送信しました！メールでご返信いたします。",
+                "qEmail": "メールアドレス",
+                "quoteOk": "お見積りのご依頼を送信しました。メールでご返信いたします。"
+            },
+            "ko": {
+                "chatName": "이메일 주소...",
+                "chatWelcome": "안녕하세요! 이메일 주소와 메시지를 남겨주세요. 이메일로 답변드리겠습니다.",
+                "chatNeed": "이메일 주소와 메시지를 입력해 주세요.",
+                "chatEmailBad": "올바른 이메일 주소를 입력해 주세요.",
+                "chatOk": "메시지가 전송되었습니다! 이메일로 답변드리겠습니다.",
+                "qEmail": "이메일 주소",
+                "quoteOk": "견적 요청이 접수되었습니다. 이메일로 답변드리겠습니다."
+            },
+            "hi": {
+                "chatName": "आपका ईमेल पता...",
+                "chatWelcome": "नमस्ते! कृपया अपना ईमेल पता और संदेश छोड़ें, हम आपको ईमेल से उत्तर देंगे।",
+                "chatNeed": "कृपया अपना ईमेल पता और संदेश भरें।",
+                "chatEmailBad": "कृपया मान्य ईमेल पता दर्ज करें।",
+                "chatOk": "संदेश भेज दिया गया! हम आपको ईमेल से उत्तर देंगे।",
+                "qEmail": "आपका ईमेल पता",
+                "quoteOk": "आपका कोटेशन अनुरोध भेज दिया गया है। हम आपको ईमेल से उत्तर देंगे।"
+            },
+            "tr": {
+                "chatName": "E-posta adresiniz...",
+                "chatWelcome": "Merhaba! Lütfen e-posta adresinizi ve mesajınızı bırakın, size e-posta ile yanıt vereceğiz.",
+                "chatNeed": "Lütfen e-posta adresinizi ve mesajınızı girin.",
+                "chatEmailBad": "Lütfen geçerli bir e-posta adresi girin.",
+                "chatOk": "Mesaj gönderildi! Size e-posta ile yanıt vereceğiz.",
+                "qEmail": "E-posta adresiniz",
+                "quoteOk": "Teklif talebiniz gönderildi. Size e-posta ile yanıt vereceğiz."
+            },
+            "vi": {
+                "chatName": "Địa chỉ email của bạn...",
+                "chatWelcome": "Xin chào! Hãy để lại địa chỉ email và tin nhắn của bạn, chúng tôi sẽ trả lời qua email.",
+                "chatNeed": "Vui lòng nhập địa chỉ email và tin nhắn của bạn.",
+                "chatEmailBad": "Vui lòng nhập địa chỉ email hợp lệ.",
+                "chatOk": "Đã gửi tin nhắn! Chúng tôi sẽ trả lời qua email.",
+                "qEmail": "Địa chỉ email của bạn",
+                "quoteOk": "Yêu cầu báo giá của bạn đã được gửi. Chúng tôi sẽ trả lời qua email."
+            },
+            "id": {
+                "chatName": "Alamat email Anda...",
+                "chatWelcome": "Halo! Tinggalkan alamat email dan pesan Anda, kami akan membalas melalui email.",
+                "chatNeed": "Harap isi alamat email dan pesan Anda.",
+                "chatEmailBad": "Harap masukkan alamat email yang valid.",
+                "chatOk": "Pesan terkirim! Kami akan membalas melalui email.",
+                "qEmail": "Alamat email Anda",
+                "quoteOk": "Permintaan penawaran Anda telah terkirim. Kami akan membalas melalui email."
+            },
+            "sv": {
+                "chatName": "Din e-postadress...",
+                "chatWelcome": "Hej! Lämna din e-postadress och ditt meddelande så svarar vi dig via e-post.",
+                "chatNeed": "Fyll i din e-postadress och ditt meddelande.",
+                "chatEmailBad": "Ange en giltig e-postadress.",
+                "chatOk": "Meddelandet har skickats! Vi svarar dig via e-post.",
+                "qEmail": "Din e-postadress",
+                "quoteOk": "Din offertförfrågan har skickats. Vi svarar dig via e-post."
+            },
+            "uk": {
+                "chatName": "Ваша електронна адреса...",
+                "chatWelcome": "Вітаємо! Залиште нам свою електронну адресу та повідомлення, ми відповімо вам електронною поштою.",
+                "chatNeed": "Вкажіть електронну адресу та повідомлення.",
+                "chatEmailBad": "Вкажіть коректну електронну адресу.",
+                "chatOk": "Повідомлення надіслано! Ми відповімо вам електронною поштою.",
+                "qEmail": "Ваша електронна адреса",
+                "quoteOk": "Ваш запит на розрахунок надіслано. Ми відповімо вам електронною поштою."
+            },
+            "ro": {
+                "chatName": "Adresa dvs. de email...",
+                "chatWelcome": "Bună ziua! Lăsați-ne adresa dvs. de email și mesajul, vă vom răspunde prin email.",
+                "chatNeed": "Completați adresa de email și mesajul.",
+                "chatEmailBad": "Introduceți o adresă de email validă.",
+                "chatOk": "Mesaj trimis! Vă vom răspunde prin email.",
+                "qEmail": "Adresa dvs. de email",
+                "quoteOk": "Cererea dvs. de ofertă a fost trimisă. Vă vom răspunde prin email."
+            }
+        };
+        Object.keys(TR_EMAIL).forEach(function (k) { translations[k] = Object.assign(translations[k] || {}, TR_EMAIL[k]); });
+        // Vérification automatique : les 20 langues doivent avoir exactement les mêmes 85 clés
+        (function () {
+            var EXPECTED = ['fr','en','de','es','it','zh','ar','pt','nl','ru','pl','ja','ko','hi','tr','vi','id','sv','uk','ro'];
+            var ref = Object.keys(translations.en || {}), problems = [];
+            EXPECTED.forEach(function (c) {
+                var d = translations[c];
+                if (!d) { problems.push(c + ' : langue absente'); return; }
+                var miss = ref.filter(function (k) { return d[k] === undefined || d[k] === ''; });
+                var extraK = Object.keys(d).filter(function (k) { return ref.indexOf(k) === -1; });
+                if (miss.length || extraK.length) problems.push(c + ' : manquantes [' + miss.join(', ') + '] en trop [' + extraK.join(', ') + ']');
+            });
+            if (problems.length) console.error('Traductions incomplètes (' + ref.length + ' clés attendues) :\n' + problems.join('\n'));
+            else console.log('Traductions OK : ' + EXPECTED.length + ' langues x ' + ref.length + ' clés');
+        })();
+        translations.de.subLog = "Internationale Logistik";
+        translations.es.subLog = "Logística Internacional";
+        translations.fr.subLog = "Logistique Internationale";
+
+        // --- Utilitaires sûrs ---
+        function lsGet(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
+        function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+        var currentLang = 'en';
+        function T(key, a0) {
+            var s = (translations[currentLang] || {})[key];
+            if (s === undefined) s = (translations.en || {})[key];
+            if (s === undefined) s = (translations.fr || {})[key];
+            if (s === undefined) s = '';
+            return String(s).split('{0}').join(a0 === undefined ? '' : a0);
+        }
+        function $(id) { return document.getElementById(id); }
+        // Email valide (et jamais un identifiant interne du système)
+        function isValidEmail(v) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) && !/@(client|visitor)\.vanguard$/.test(v);
+        }
+        function visitorId() {
+            var v = lsGet('vf_visitor_id', null);
+            if (!v) { v = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); lsSet('vf_visitor_id', v); }
+            return v;
+        }
+
+        // --- Thème ---
+        function initTheme() { document.documentElement.setAttribute('data-theme', lsGet('suiviTheme', 'light')); }
+        function toggleDarkMode() {
+            var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            lsSet('suiviTheme', next);
+        }
+
+        // --- Langues ---
+        function toggleLangModal() {
+            var modal = $('langModal');
+            modal.classList.toggle('active');
+            var inp = $('langSearchInput');
+            if (modal.classList.contains('active')) {
+                if (window.matchMedia && window.matchMedia('(hover: hover)').matches) inp.focus();
+            } else { inp.value = ''; filterLanguages(); }
+        }
+        function filterLanguages() {
+            var norm = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); };
+            var q = norm($('langSearchInput').value);
+            document.querySelectorAll('.lang-item').forEach(function (it) {
+                var hay = norm(it.innerText + ' ' + (it.getAttribute('data-search') || ''));
+                it.style.display = hay.indexOf(q) !== -1 ? 'flex' : 'none';
+            });
+        }
+        function detectInitialLang() {
+            var saved = lsGet('siteLang', null);
+            if (saved && translations[saved]) return saved;
+            var fromSuivi = (lsGet('suiviLang', '') || '').toLowerCase();
+            if (fromSuivi && translations[fromSuivi]) return fromSuivi;
+            var list = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language || 'en'];
+            for (var i = 0; i < list.length; i++) {
+                var c = String(list[i] || '').slice(0, 2).toLowerCase();
+                if (translations[c]) return c;
+            }
+            return 'en';
+        }
+        function changeLanguage(code, label) {
+            lsSet('siteLang', code); lsSet('siteLangLabel', label);
+            lsSet('suiviLang', code.toUpperCase());
+            applyLanguage(code);
+            toggleLangModal();
+        }
+        function applyLanguage(lang) {
+            if (!translations[lang]) lang = 'en';
+            currentLang = lang;
+            var root = document.documentElement;
+            root.lang = lang; root.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+            var ic = {
+                't-nav-theme': '<i class="fa-solid fa-moon"></i> ',
+                't-hero-badge': '<i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> ',
+                't-tab-track': '<i class="fa-solid fa-location-dot"></i> ',
+                't-tab-est': '<i class="fa-solid fa-calculator"></i> '
+            };
+            var map = {
+                't-sub-log': 'subLog', 't-nav-serv': 'navServ', 't-nav-rev': 'navRev', 't-nav-quote': 'navQuote', 't-nav-theme': 'navTheme',
+                't-mod-title': 'modTitle', 't-hero-badge': 'heroBadge', 't-hero-title': 'heroTitle', 't-hero-sub': 'heroSub',
+                't-tab-track': 'tabTrack', 't-tab-est': 'tabEst', 't-btn-search': 'btnSearch', 'errorText': 'errText',
+                't-stat-1': 'stat1', 't-stat-2': 'stat2', 't-stat-3': 'stat3', 't-stat-4': 'stat4',
+                't-card1-title': 'card1Title', 't-card1-desc': 'card1Desc', 't-card2-title': 'card2Title', 't-card2-desc': 'card2Desc',
+                't-card3-title': 'card3Title', 't-card3-desc': 'card3Desc', 't-rev-h': 'revH', 't-rev-p': 'revP',
+                't-q-h': 'quoteH', 't-q-p': 'quoteP', 't-q-btn': 'quoteBtn', 't-foot-desc': 'footDesc',
+                't-foot-serv-h': 'footServH', 't-foot-comp-h': 'footCompH', 't-copy': 'copy',
+                't-chat-title': 'chatTitle', 't-chat-welcome': 'chatWelcome', 't-chat-send': 'chatSend'
+            };
+            for (var i = 1; i <= 8; i++) { map['t-rev-' + i] = 'rev' + i; map['t-auth-' + i] = 'auth' + i; }
+            for (i = 1; i <= 4; i++) { map['t-fserv-' + i] = 'fserv' + i; map['t-fcomp-' + i] = 'fcomp' + i; }
+            Object.keys(map).forEach(function (id) {
+                var el = $(id); if (!el) return;
+                var txt = T(map[id]);
+                if (ic[id]) el.innerHTML = ic[id] + txt; else el.textContent = txt;
+            });
+            var ph = { trackingCode: 'trackPlace', clientName: 'chatName', clientMessage: 'chatMsg', langSearchInput: 'langSearch', 't-q-dep': 'qDep', 't-q-dest': 'qDest', 't-q-wt': 'qWt', 't-q-email': 'qEmail' };
+            Object.keys(ph).forEach(function (id) { var el = $(id); if (el) el.placeholder = T(ph[id]); });
+            var opts = document.querySelectorAll('#t-q-sel option'), ok = ['qSel', 'qAir', 'qSea', 'qRoad'];
+            opts.forEach(function (o, n) { if (ok[n]) o.textContent = T(ok[n]); });
+            document.title = T('title');
+            var b = document.querySelector('.custom-chat-btn'); if (b) b.title = T('chatBtn');
+            b = document.querySelector('.lang-selector-btn'); if (b) b.title = T('langBtn');
+            b = document.querySelector('.burger-btn'); if (b) b.setAttribute('aria-label', T('menu'));
+            var nb = document.querySelectorAll('.carousel-btn'); if (nb[0]) nb[0].setAttribute('aria-label', T('prev')); if (nb[1]) nb[1].setAttribute('aria-label', T('next'));
+            $('currentLangLabel').textContent = lang.toUpperCase();
+        }
+
+        function toggleMenu() { $('navMenu').classList.toggle('active'); }
+        function closeMenu() { $('navMenu').classList.remove('active'); }
+        function scrollCarousel(direction) {
+            var rtl = document.documentElement.dir === 'rtl';
+            $('reviewsSlider').scrollBy({ left: direction * 340 * (rtl ? -1 : 1), behavior: 'smooth' });
+        }
+
+        // --- Suivi de colis ---
+        async function runTracking() {
+            var input = $('trackingCode').value.trim();
+            var errorDiv = $('index-error-message'), errorText = $('errorText'), btn = $('searchBtn');
+            var idle = '<i class="fa-solid fa-magnifying-glass"></i> <span id="t-btn-search">' + T('btnSearch') + '</span>';
+            errorDiv.style.display = 'none';
+            if (!input) { errorText.textContent = T('errEmpty'); errorDiv.style.display = 'flex'; return; }
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + T('btnChecking');
+            btn.disabled = true;
+            try {
+                if (!supabaseClient) throw new Error('no client');
+                var found = null, tries = [input];
+                if (input.toUpperCase() !== input) tries.push(input.toUpperCase());
+                for (var n = 0; n < tries.length && !found; n++) {
+                    var r = await supabaseClient.rpc('colis_exists', { p_code: tries[n] });
+                    if (r.error && (r.error.code === 'PGRST202' || r.error.code === '42883')) {
+                        // Fonction SQL pas encore installée : ancienne vérification directe
+                        r = await supabaseClient.from('colis').select('trackingId').eq('trackingId', tries[n]).limit(1);
+                        if (r.error) throw r.error;
+                        if (r.data && r.data.length) found = tries[n];
+                    } else if (r.error) { throw r.error; }
+                    else if (r.data === true) found = tries[n];
+                }
+                if (!found) {
+                    errorText.textContent = T('errNotFound', input);
+                    errorDiv.style.display = 'flex';
+                    btn.innerHTML = idle; btn.disabled = false;
+                    return;
+                }
+                window.location.href = 'suivi.html?code=' + encodeURIComponent(found);
+            } catch (err) {
+                console.error('Erreur de connexion:', err);
+                errorText.textContent = T('errServer');
+                errorDiv.style.display = 'flex';
+                btn.innerHTML = idle; btn.disabled = false;
+            }
+        }
+
+        // --- Devis (enregistré dans la table existante "messages") ---
+        async function handleQuoteSubmit(e) {
+            e.preventDefault();
+            var sel = $('t-q-sel'), btn = $('t-q-btn');
+            var mode = sel.options[sel.selectedIndex].textContent;
+            var email = $('t-q-email').value.trim().toLowerCase().slice(0, 120);
+            if (!isValidEmail(email)) { alert(T('chatEmailBad')); return; }
+            var text = '[DEVIS] ' + mode + ' | ' + $('t-q-dep').value.trim() + ' -> ' + $('t-q-dest').value.trim() + ' | ' + $('t-q-wt').value + ' kg | ' + email;
+            btn.disabled = true;
+            try {
+                if (!supabaseClient) throw new Error('no client');
+                var r = await supabaseClient.from('messages').insert([{
+                    client_name: email, client_email: email,
+                    sender: 'client', message: text, is_read: false
+                }]);
+                if (r.error) throw r.error;
+                alert(T('quoteOk'));
+                e.target.reset();
+            } catch (err) {
+                console.error('Erreur devis:', err);
+                alert(T('quoteErr'));
+            }
+            btn.disabled = false;
+        }
+
+        // --- Chat ---
+        function toggleChatModal() { $('chatModal').classList.toggle('active'); }
+        async function sendClientMessage() {
+            var nameInput = $('clientName'), msgInput = $('clientMessage'), chatBody = $('chatBody'), btn = $('t-chat-send');
+            var email = nameInput.value.trim().toLowerCase().slice(0, 120), message = msgInput.value.trim().slice(0, 2000);
+            if (!email || !message) { alert(T('chatNeed')); return; }
+            if (!isValidEmail(email)) { alert(T('chatEmailBad')); return; }
+            btn.disabled = true;
+            try {
+                if (!supabaseClient) throw new Error('no client');
+                var r = await supabaseClient.from('messages').insert([{
+                    client_name: email, client_email: email, sender: 'client', message: message, is_read: false
+                }]);
+                if (r.error) throw r.error;
+                msgInput.value = '';
+                var ok = document.createElement('div');
+                ok.style.cssText = 'background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; padding: 12px; border-radius: 8px; font-size: 0.85rem; text-align: center; font-weight: 600; margin-top: 10px;';
+                ok.innerHTML = '<i class="fa-solid fa-circle-check"></i> ';
+                ok.appendChild(document.createTextNode(T('chatOk')));
+                chatBody.appendChild(ok);
+                chatBody.scrollTop = chatBody.scrollHeight;
+                setTimeout(function () { ok.remove(); toggleChatModal(); }, 2500);
+            } catch (err) {
+                console.error("Erreur lors de l'envoi du message:", err);
+                alert(T('chatErr'));
+            }
+            btn.disabled = false;
+        }
+
+        // --- Compteur de visites : une ligne par session dans la table existante "visites" ---
+        async function detectCountry() {
+            var lang = (document.documentElement.lang || 'en');
+            function name(code) {
+                try { return new Intl.DisplayNames([lang], { type: 'region' }).of(code) || code; } catch (e) { return code; }
+            }
+            try {
+                var ctl = new AbortController(), tm = setTimeout(function () { ctl.abort(); }, 3500);
+                var res = await fetch('https://api.country.is', { signal: ctl.signal });
+                clearTimeout(tm);
+                var j = await res.json();
+                if (j && j.country) return name(j.country);
+            } catch (e) {}
+            var m = (navigator.language || '').split('-')[1];
+            return m ? name(m.toUpperCase()) : 'Inconnu';
+        }
+        async function logVisit() {
+            try {
+                if (!supabaseClient) return;
+                try { if (sessionStorage.getItem('vf_visit_logged')) return; } catch (e) {}
+                visitorId();
+                var pays = await detectCountry();
+                var attempts = [{ pays: pays }, { country: pays }, {}];
+                for (var i = 0; i < attempts.length; i++) {
+                    var r = await supabaseClient.from('visites').insert([attempts[i]]);
+                    if (!r.error) { try { sessionStorage.setItem('vf_visit_logged', '1'); } catch (e) {} return; }
+                    console.warn('visites insert:', r.error.message);
+                    if (r.error.code !== 'PGRST204' && r.error.code !== '42703') return;
+                }
+            } catch (e) { console.warn('Compteur visites indisponible:', e); }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initTheme();
+            applyLanguage(detectInitialLang());
+            $('langModal').addEventListener('click', function (ev) { if (ev.target === this) toggleLangModal(); });
+            document.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Escape' && $('langModal').classList.contains('active')) toggleLangModal();
+            });
+            logVisit();
+        });
+    </script>
+</body>
+</html>
