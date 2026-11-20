@@ -2606,6 +2606,28 @@
             icon.className = "spinner-icon";
             txt.textContent = t('saving');
 
+            // Historique des mises à jour (affiché côté client dans « Dernières mises à jour »)
+            try {
+                let prev = null;
+                try {
+                    const r = await supabaseClient.from('colis').select('data').eq('trackingId', trackingId).maybeSingle();
+                    prev = r && r.data ? r.data.data : null;
+                } catch (e) { prev = null; }
+                const hist = (prev && Array.isArray(prev.historique)) ? prev.historique.slice() : [];
+                const keys = ['statutGlobal', 'etatMouvement', 'positionActuelle', 'positionCamion'];
+                const changed = !prev || keys.some(k => String(prev[k] || '') !== String(formData[k] || ''));
+                if (changed) {
+                    hist.push({
+                        t: Date.now(),
+                        statutGlobal: formData.statutGlobal,
+                        etatMouvement: formData.etatMouvement,
+                        positionActuelle: formData.positionActuelle,
+                        positionCamion: formData.positionCamion
+                    });
+                }
+                formData.historique = hist.slice(-20);
+            } catch (e) { console.warn('Historique non mis à jour', e); }
+
             const { error } = await supabaseClient.from('colis').upsert({
                 trackingId: trackingId,
                 data: formData
